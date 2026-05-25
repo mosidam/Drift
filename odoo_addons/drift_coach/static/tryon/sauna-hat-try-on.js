@@ -20990,7 +20990,7 @@ function Xs() {
   });
 }
 function cf(i) {
-  const e = i.querySelector("[data-tryon-canvas]"), t = i.querySelector("[data-tryon-state]"), n = new of({ antialias: !0, alpha: !0 });
+  const e = i.querySelector("[data-tryon-canvas]"), t = i.querySelector("[data-tryon-state]"), n = new of({ antialias: !0, alpha: !0, preserveDrawingBuffer: !0 });
   n.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)), n.outputColorSpace = Lt, n.shadowMap.enabled = !0, n.shadowMap.type = 2, e.appendChild(n.domElement), n.domElement.setAttribute("aria-label", "3D sauna hat try-on preview");
   const r = new Ga();
   r.background = new He("#080807"), r.fog = new br("#080807", 6, 14);

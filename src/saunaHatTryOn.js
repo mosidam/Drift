@@ -36,7 +36,7 @@ function init() {
 function createTryOn(root) {
   const canvasMount = root.querySelector('[data-tryon-canvas]');
   const stateLabel = root.querySelector('[data-tryon-state]');
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
