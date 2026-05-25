@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  publicDir: false,
+  publicDir: 'src/tryon-public',
   build: {
     emptyOutDir: true,
     lib: {

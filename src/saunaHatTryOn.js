@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+const MODEL_FLOOR_Y = -3.84;
+const MODEL_HEIGHT = 5.72;
+const SCANNED_MODEL_URL = '/drift_coach/static/tryon/models/drift-athlete-hsr0015.glb';
 
 const PALETTE = {
   black: { hat: '#111111', trim: '#d8c1a0', label: 'Black wool' },
@@ -39,24 +44,26 @@ function createTryOn(root) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.78;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   canvasMount.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-label', '3D sauna hat try-on preview');
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#080807');
-  scene.fog = new THREE.Fog('#080807', 6, 14);
+  scene.background = new THREE.Color('#ddd8ce');
+  scene.fog = new THREE.Fog('#ddd8ce', 9, 18);
 
-  const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-  camera.position.set(0, 1.58, 6.2);
+  const camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
+  camera.position.set(0.12, -0.85, 12.4);
 
   const avatar = new THREE.Group();
   avatar.rotation.y = -0.22;
   scene.add(avatar);
 
   const materials = createMaterials();
-  const { hatGroup, hatMaterial, trimMaterial, seamMaterial } = buildAvatar(avatar, materials);
+  const { bodyGroup, hatAnchor, hatGroup, hatMaterial, trimMaterial, seamMaterial } = buildAvatar(avatar, materials);
   const floor = buildEnvironment(scene);
 
   const state = {
@@ -67,6 +74,8 @@ function createTryOn(root) {
     trim: 'natural',
     variant: 'classic',
   };
+  window.__driftTryOnModel = 'procedural';
+  loadScannedModel(avatar, bodyGroup, hatAnchor);
 
   const resize = () => {
     const bounds = root.getBoundingClientRect();
@@ -74,8 +83,8 @@ function createTryOn(root) {
     const height = Math.max(520, Math.floor(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 720 ? 7 : 6.2;
-    camera.position.y = width < 720 ? 1.7 : 1.58;
+    camera.position.z = width < 720 ? 14.5 : 12.4;
+    camera.position.y = -0.85;
     camera.updateProjectionMatrix();
   };
 
@@ -92,7 +101,7 @@ function createTryOn(root) {
     stateLabel.textContent = `${palette.label} / ${variant.label}`;
     root.dataset.color = state.color;
     root.dataset.variant = state.variant;
-    window.__driftTryOnState = { ...state };
+    window.__driftTryOnState = { ...state, model: window.__driftTryOnModel || 'procedural' };
   };
 
   wireControls(root, state, applyState);
@@ -118,26 +127,50 @@ function createTryOn(root) {
 }
 
 function createMaterials() {
+  const skinTexture = makeNoiseTexture('#9e6f5f', '#c6927d', 96, 0.18);
+  const woolTexture = makeNoiseTexture('#0b0b0b', '#272522', 128, 0.34);
+  woolTexture.wrapS = THREE.RepeatWrapping;
+  woolTexture.wrapT = THREE.RepeatWrapping;
+  woolTexture.repeat.set(2.8, 2.8);
   return {
-    fabric: new THREE.MeshStandardMaterial({
+    fabric: new THREE.MeshPhysicalMaterial({
       color: '#111111',
       metalness: 0,
-      roughness: 0.92,
+      roughness: 0.98,
+      sheen: 0.75,
+      sheenRoughness: 0.9,
+      map: woolTexture,
     }),
-    skin: new THREE.MeshStandardMaterial({
+    skin: new THREE.MeshPhysicalMaterial({
       color: '#a77967',
       metalness: 0,
-      roughness: 0.68,
+      roughness: 0.62,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.82,
+      map: skinTexture,
     }),
-    trim: new THREE.MeshStandardMaterial({
+    trim: new THREE.MeshPhysicalMaterial({
       color: '#d8c1a0',
       metalness: 0,
-      roughness: 0.82,
+      roughness: 0.88,
+      sheen: 0.42,
     }),
-    body: new THREE.MeshStandardMaterial({
-      color: '#191918',
+    body: new THREE.MeshPhysicalMaterial({
+      color: '#141412',
+      metalness: 0,
+      roughness: 0.7,
+      clearcoat: 0.16,
+      clearcoatRoughness: 0.7,
+    }),
+    shorts: new THREE.MeshStandardMaterial({
+      color: '#090909',
       metalness: 0,
       roughness: 0.76,
+    }),
+    towel: new THREE.MeshStandardMaterial({
+      color: '#ddd0b6',
+      metalness: 0,
+      roughness: 0.95,
     }),
     seam: new THREE.LineBasicMaterial({
       color: '#bda27c',
@@ -148,88 +181,178 @@ function createMaterials() {
 }
 
 function buildAvatar(group, materials) {
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.82, 1.18, 12, 36), materials.body);
-  body.position.set(0, -0.58, 0);
-  body.scale.set(1.2, 0.68, 0.76);
-  body.castShadow = true;
-  group.add(body);
+  const bodyGroup = new THREE.Group();
+  bodyGroup.name = 'Procedural athlete fallback';
+  group.add(bodyGroup);
 
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.34, 0.52, 36), materials.skin);
-  neck.position.y = 0.28;
+  const hips = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, 0.58, 12, 42), materials.shorts);
+  hips.position.set(0, -1.2, 0);
+  hips.rotation.z = Math.PI / 2;
+  hips.scale.set(0.82, 1.08, 0.62);
+  hips.castShadow = true;
+  bodyGroup.add(hips);
+
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.54, 1.38, 18, 52), materials.body);
+  torso.position.set(0, -0.06, 0);
+  torso.scale.set(0.93, 1.03, 0.58);
+  torso.castShadow = true;
+  torso.receiveShadow = true;
+  bodyGroup.add(torso);
+
+  const chestWrap = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.035, 10, 72), materials.towel);
+  chestWrap.position.set(0, 0.16, 0);
+  chestWrap.rotation.x = Math.PI / 2;
+  chestWrap.scale.set(0.92, 0.56, 0.16);
+  chestWrap.castShadow = true;
+  bodyGroup.add(chestWrap);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 0.38, 38), materials.skin);
+  neck.position.y = 0.86;
   neck.castShadow = true;
-  group.add(neck);
+  bodyGroup.add(neck);
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.78, 56, 36), materials.skin);
-  head.position.y = 1.07;
-  head.scale.set(0.88, 1.05, 0.8);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.46, 56, 40), materials.skin);
+  head.position.y = 1.31;
+  head.scale.set(0.86, 1.08, 0.78);
   head.castShadow = true;
-  group.add(head);
+  bodyGroup.add(head);
 
-  const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.52, 40, 20), materials.skin);
-  jaw.position.set(0, 0.7, 0.08);
-  jaw.scale.set(0.95, 0.58, 0.9);
+  const jaw = new THREE.Mesh(new THREE.SphereGeometry(0.31, 40, 20), materials.skin);
+  jaw.position.set(0, 1.08, 0.04);
+  jaw.scale.set(0.96, 0.5, 0.86);
   jaw.castShadow = true;
-  group.add(jaw);
+  bodyGroup.add(jaw);
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 24), materials.skin);
-  nose.position.set(0, 1.08, 0.67);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.052, 0.16, 24), materials.skin);
+  nose.position.set(0, 1.31, 0.39);
   nose.rotation.x = Math.PI / 2;
-  group.add(nose);
+  nose.castShadow = true;
+  bodyGroup.add(nose);
 
-  const earGeometry = new THREE.SphereGeometry(0.14, 24, 16);
-  [-0.68, 0.68].forEach((x) => {
-    const ear = new THREE.Mesh(earGeometry, materials.skin);
-    ear.position.set(x, 1.06, 0.02);
-    ear.scale.set(0.55, 1, 0.34);
-    ear.castShadow = true;
-    group.add(ear);
+  const brow = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.035), materials.body);
+  brow.position.set(0, 1.43, 0.365);
+  brow.castShadow = true;
+  bodyGroup.add(brow);
+
+  const eyeMaterial = new THREE.MeshStandardMaterial({ color: '#14110f', roughness: 0.45 });
+  [-0.13, 0.13].forEach((x) => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 12), eyeMaterial);
+    eye.position.set(x, 1.34, 0.405);
+    bodyGroup.add(eye);
   });
 
+  const earGeometry = new THREE.SphereGeometry(0.085, 24, 16);
+  [-0.43, 0.43].forEach((x) => {
+    const ear = new THREE.Mesh(earGeometry, materials.skin);
+    ear.position.set(x, 1.31, 0.0);
+    ear.scale.set(0.55, 1, 0.34);
+    ear.castShadow = true;
+    bodyGroup.add(ear);
+  });
+
+  const shoulderGeometry = new THREE.CapsuleGeometry(0.18, 0.9, 12, 32);
+  [-0.62, 0.62].forEach((x) => {
+    const shoulder = new THREE.Mesh(shoulderGeometry, materials.skin);
+    shoulder.position.set(x, 0.45, 0);
+    shoulder.rotation.z = Math.PI / 2;
+    shoulder.castShadow = true;
+    bodyGroup.add(shoulder);
+
+    const upperArm = makeLimb(0.13, 0.82, materials.skin);
+    upperArm.position.set(x * 1.1, -0.02, 0.02);
+    upperArm.rotation.z = x > 0 ? -0.24 : 0.24;
+    upperArm.castShadow = true;
+    bodyGroup.add(upperArm);
+
+    const forearm = makeLimb(0.115, 0.78, materials.skin);
+    forearm.position.set(x * 1.06, -0.75, 0.06);
+    forearm.rotation.z = x > 0 ? 0.08 : -0.08;
+    forearm.castShadow = true;
+    bodyGroup.add(forearm);
+
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.14, 24, 16), materials.skin);
+    hand.position.set(x * 1.02, -1.2, 0.08);
+    hand.scale.set(0.72, 1.06, 0.5);
+    hand.castShadow = true;
+    bodyGroup.add(hand);
+  });
+
+  [-0.28, 0.28].forEach((x) => {
+    const upperLeg = makeLimb(0.19, 1.05, materials.skin);
+    upperLeg.position.set(x, -1.86, 0.02);
+    upperLeg.castShadow = true;
+    bodyGroup.add(upperLeg);
+
+    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 16), materials.skin);
+    knee.position.set(x, -2.42, 0.06);
+    knee.scale.set(0.9, 0.65, 0.82);
+    knee.castShadow = true;
+    bodyGroup.add(knee);
+
+    const lowerLeg = makeLimb(0.155, 1.12, materials.skin);
+    lowerLeg.position.set(x, -3.04, 0.02);
+    lowerLeg.castShadow = true;
+    bodyGroup.add(lowerLeg);
+
+    const foot = new THREE.Mesh(new THREE.SphereGeometry(0.2, 28, 16), materials.skin);
+    foot.position.set(x, -3.65, 0.24);
+    foot.scale.set(0.8, 0.36, 1.55);
+    foot.castShadow = true;
+    bodyGroup.add(foot);
+  });
+
+  const hatAnchor = new THREE.Group();
+  hatAnchor.name = 'Sauna hat anchor';
+  group.add(hatAnchor);
+
   const hatGroup = new THREE.Group();
-  hatGroup.position.y = 0;
-  group.add(hatGroup);
+  hatGroup.position.set(0, -0.18, 0);
+  hatAnchor.add(hatGroup);
 
   const hatGeometry = new THREE.LatheGeometry(
     [
-      new THREE.Vector2(0, 2.37),
-      new THREE.Vector2(0.15, 2.36),
-      new THREE.Vector2(0.43, 2.2),
-      new THREE.Vector2(0.67, 1.94),
-      new THREE.Vector2(0.84, 1.62),
-      new THREE.Vector2(0.94, 1.34),
-      new THREE.Vector2(0.9, 1.22),
+      new THREE.Vector2(0, 2.21),
+      new THREE.Vector2(0.08, 2.2),
+      new THREE.Vector2(0.26, 2.08),
+      new THREE.Vector2(0.44, 1.88),
+      new THREE.Vector2(0.56, 1.64),
+      new THREE.Vector2(0.6, 1.43),
+      new THREE.Vector2(0.57, 1.31),
     ],
-    72
+    96
   );
   const hat = new THREE.Mesh(hatGeometry, materials.fabric);
   hat.castShadow = true;
   hat.receiveShadow = true;
   hatGroup.add(hat);
 
-  const brim = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.046, 16, 96), materials.trim);
-  brim.position.y = 1.24;
+  const brim = new THREE.Mesh(new THREE.TorusGeometry(0.565, 0.036, 18, 128), materials.trim);
+  brim.position.y = 1.315;
   brim.rotation.x = Math.PI / 2;
   brim.castShadow = true;
   hatGroup.add(brim);
 
-  const innerBrim = new THREE.Mesh(new THREE.TorusGeometry(0.77, 0.018, 12, 96), materials.trim);
-  innerBrim.position.y = 1.225;
+  const innerBrim = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.014, 12, 96), materials.trim);
+  innerBrim.position.y = 1.295;
   innerBrim.rotation.x = Math.PI / 2;
   hatGroup.add(innerBrim);
 
-  const loop = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.018, 12, 40), materials.trim);
-  loop.position.set(0, 2.45, 0.02);
+  const loop = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.015, 12, 48), materials.trim);
+  loop.position.set(0, 2.27, 0.02);
   loop.scale.y = 1.35;
   loop.castShadow = true;
   hatGroup.add(loop);
 
-  for (let i = 0; i < 10; i += 1) {
-    const angle = (i / 10) * Math.PI * 2;
+  for (let i = 0; i < 12; i += 1) {
+    const angle = (i / 12) * Math.PI * 2;
     const seam = makeSeam(angle, materials.seam);
     hatGroup.add(seam);
   }
+  addWoolFibers(hatGroup, materials.fabric.color);
 
   return {
+    bodyGroup,
+    hatAnchor,
     hatGroup,
     hatMaterial: materials.fabric,
     trimMaterial: materials.trim,
@@ -237,52 +360,169 @@ function buildAvatar(group, materials) {
   };
 }
 
+function loadScannedModel(group, fallbackBody, hatAnchor) {
+  const loader = new GLTFLoader();
+  loader.load(
+    SCANNED_MODEL_URL,
+    (gltf) => {
+      const model = gltf.scene;
+      model.name = 'HSRD athletic scan model';
+      model.rotation.x = -Math.PI / 2;
+      prepareScannedModel(model);
+      normalizeScannedModel(model);
+      group.add(model);
+      fallbackBody.visible = false;
+      hatAnchor.position.set(0, 0.09, 0.08);
+      window.__driftTryOnModel = 'hsrd-athlete-glb';
+      window.__driftTryOnState = { ...(window.__driftTryOnState || {}), model: window.__driftTryOnModel };
+    },
+    undefined,
+    (error) => {
+      window.__driftTryOnModel = 'procedural';
+      window.__driftTryOnModelError = error?.message || 'Unable to load scanned model';
+    }
+  );
+}
+
+function prepareScannedModel(model) {
+  model.traverse((child) => {
+    if (!child.isMesh) return;
+    child.castShadow = true;
+    child.receiveShadow = true;
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.filter(Boolean).forEach((material) => {
+      material.side = THREE.DoubleSide;
+      material.transparent = false;
+      material.opacity = 1;
+      material.depthWrite = true;
+      material.alphaTest = 0;
+      material.roughness = Math.max(material.roughness ?? 0.55, 0.5);
+      material.envMapIntensity = 0.35;
+      material.needsUpdate = true;
+    });
+  });
+}
+
+function normalizeScannedModel(model) {
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const scale = MODEL_HEIGHT / Math.max(size.y, 0.001);
+  model.scale.multiplyScalar(scale);
+  model.updateMatrixWorld(true);
+
+  const fittedBox = new THREE.Box3().setFromObject(model);
+  const center = fittedBox.getCenter(new THREE.Vector3());
+  model.position.x -= center.x;
+  model.position.z -= center.z + 0.04;
+  model.position.y += MODEL_FLOOR_Y - fittedBox.min.y;
+  model.updateMatrixWorld(true);
+  const normalizedBox = new THREE.Box3().setFromObject(model);
+  const normalizedSize = normalizedBox.getSize(new THREE.Vector3());
+  window.__driftTryOnModelBox = {
+    min: normalizedBox.min.toArray(),
+    max: normalizedBox.max.toArray(),
+    size: normalizedSize.toArray(),
+  };
+}
+
 function makeSeam(angle, material) {
   const points = [];
   for (let i = 0; i <= 22; i += 1) {
     const t = i / 22;
-    const y = 2.32 - t * 0.95;
-    const radius = 0.08 + t * 0.82;
+    const y = 2.16 - t * 0.78;
+    const radius = 0.055 + t * 0.5;
     points.push(new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius));
   }
   const geometry = new THREE.BufferGeometry().setFromPoints(points);
   return new THREE.Line(geometry, material);
 }
 
+function makeLimb(radius, length, material) {
+  const limb = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 12, 28), material);
+  limb.rotation.x = 0.02;
+  return limb;
+}
+
+function addWoolFibers(group) {
+  const points = [];
+  for (let i = 0; i < 260; i += 1) {
+    const theta = Math.random() * Math.PI * 2;
+    const t = Math.random();
+    const y = 1.35 + t * 0.78;
+    const radius = 0.56 - t * 0.48 + Math.random() * 0.035;
+    const base = new THREE.Vector3(Math.cos(theta) * radius, y, Math.sin(theta) * radius);
+    const tip = base.clone().add(
+      new THREE.Vector3(
+        Math.cos(theta) * (0.018 + Math.random() * 0.026),
+        (Math.random() - 0.5) * 0.026,
+        Math.sin(theta) * (0.018 + Math.random() * 0.026)
+      )
+    );
+    points.push(base, tip);
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const material = new THREE.LineBasicMaterial({ color: '#24211d', transparent: true, opacity: 0.42 });
+  group.add(new THREE.LineSegments(geometry, material));
+}
+
 function buildEnvironment(scene) {
-  scene.add(new THREE.HemisphereLight('#fff0d0', '#1d201c', 1.25));
-  const key = new THREE.DirectionalLight('#fff1c8', 2.4);
-  key.position.set(3, 5, 4);
+  scene.add(new THREE.HemisphereLight('#ffffff', '#c8baaa', 1.7));
+  const key = new THREE.DirectionalLight('#fff7e9', 2.05);
+  key.position.set(3.2, 5.2, 4);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight('#b8d5d0', 1.7);
+  const rim = new THREE.DirectionalLight('#d4e7e2', 1.25);
   rim.position.set(-3, 2.8, -2);
   scene.add(rim);
 
+  const fill = new THREE.DirectionalLight('#ffffff', 0.68);
+  fill.position.set(-2, 2.6, 3.6);
+  scene.add(fill);
+
   const floor = new THREE.Mesh(
-    new THREE.CircleGeometry(3.1, 96),
+    new THREE.CircleGeometry(4.15, 128),
     new THREE.MeshStandardMaterial({
-      color: '#161512',
+      color: '#c8c0b3',
       metalness: 0,
       roughness: 0.88,
     })
   );
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -1.52;
+  floor.position.y = MODEL_FLOOR_Y - 0.02;
   floor.receiveShadow = true;
   scene.add(floor);
 
   const heat = new THREE.Mesh(
-    new THREE.TorusGeometry(2.28, 0.012, 8, 160),
-    new THREE.MeshBasicMaterial({ color: '#d87435', transparent: true, opacity: 0.28 })
+    new THREE.TorusGeometry(2.85, 0.012, 8, 160),
+    new THREE.MeshBasicMaterial({ color: '#c97342', transparent: true, opacity: 0.28 })
   );
   heat.rotation.x = Math.PI / 2;
-  heat.position.y = -1.48;
+  heat.position.y = MODEL_FLOOR_Y + 0.02;
   scene.add(heat);
 
   return heat;
+}
+
+function makeNoiseTexture(baseColor, fleckColor, size, alpha) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(0, 0, size, size);
+  ctx.globalAlpha = alpha;
+  for (let i = 0; i < size * 7; i += 1) {
+    const value = Math.random();
+    ctx.fillStyle = value > 0.5 ? fleckColor : baseColor;
+    ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 2, 1 + Math.random() * 2);
+  }
+  ctx.globalAlpha = 1;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function wireControls(root, state, applyState) {
