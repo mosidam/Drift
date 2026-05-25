@@ -80,6 +80,8 @@ for (const forbidden of [
 const fallbackDecision = buildDeterministicDecision(context, 'offline');
 assert.equal(validateCoachDecision(fallbackDecision), true);
 assert.match(fallbackDecision.safety_note, /not medical advice/i);
+assert.equal(Array.isArray(fallbackDecision.recommended_protocol_ids), true);
+assert.equal(Object.prototype.hasOwnProperty.call(fallbackDecision, 'recommended_product_template_id'), true);
 
 const stateWithDecision = recordCoachDecision(sensitiveState, fallbackDecision, context, 'offline');
 const privacy = buildPrivacySummary(stateWithDecision);
@@ -92,7 +94,18 @@ const serverSource = await readFile(new URL('../server/index.mjs', import.meta.u
 assert.match(serverSource, /store:\s*false/);
 assert.doesNotMatch(serverSource, /background:\s*true/);
 assert.match(serverSource, /\/api\/coach\/decision/);
+assert.match(serverSource, /\/drift\/api\/bootstrap/);
 assert.match(serverSource, /\/api\/coach\/adjust/);
 assert.match(serverSource, /\/api\/privacy\/summary/);
+
+const odooController = await readFile(new URL('../odoo_addons/drift_coach/controllers/main.py', import.meta.url), 'utf8');
+const odooModels = await readFile(new URL('../odoo_addons/drift_coach/models/drift_models.py', import.meta.url), 'utf8');
+assert.match(odooController, /\/drift\/api\/bootstrap/);
+assert.match(odooController, /\/app\/<path:path>/);
+assert.match(odooController, /X-CSRFToken/);
+assert.match(odooModels, /store\": False/);
+assert.match(odooModels, /encrypted_access_token/);
+assert.doesNotMatch(odooModels, /raw_payload/);
+assert.doesNotMatch(odooModels, /route_name/);
 
 console.log('coach privacy tests passed');

@@ -5,16 +5,16 @@ const now = new Date();
 const isoDaysAgo = (days) => new Date(now.getTime() - days * dayMs).toISOString();
 
 export const apiRoutes = {
-  today: '/api/today',
-  checkIns: '/api/check-ins',
-  ritualLogs: '/api/ritual-logs',
-  coachDecision: '/api/coach/decision',
-  coachAdjust: '/api/coach/adjust',
-  privacySummary: '/api/privacy/summary',
-  stravaConnect: '/api/strava/connect',
-  stravaCallback: '/api/strava/callback',
-  stravaWebhook: '/api/strava/webhook',
-  stravaExportRitual: '/api/strava/export-ritual',
+  bootstrap: '/drift/api/bootstrap',
+  checkIn: '/drift/api/check-in',
+  ritualLog: '/drift/api/ritual-log',
+  coachDecision: '/drift/api/coach/decision',
+  coachAdjust: '/drift/api/coach/adjust',
+  privacySummary: '/drift/api/privacy/summary',
+  stravaConnect: '/drift/strava/connect',
+  stravaCallback: '/drift/strava/callback',
+  stravaWebhook: '/drift/strava/webhook',
+  stravaExportRitual: '/drift/strava/export-ritual',
 };
 
 export const decisionLabels = {
@@ -58,40 +58,131 @@ export const protocols = [
     pillar: 'Run',
     title: 'Hot Miles Prep',
     duration: '8 min',
+    durationMinutes: 8,
     intensity: 'Low',
     copy: 'Prime the session before heat, hills, or a long exposed route.',
+    equipment: 'Heat cap optional',
+    audioReady: true,
     steps: ['Sip water before kit-up', 'Nasal-only warmup for 4 minutes', 'Run the first 10 minutes under control'],
     cta: 'Pair with DRIFT Heat Cap',
+    commerceUrl: '/shop',
   },
   {
     id: 'nasal-reset',
     pillar: 'Breathe',
     title: 'Nasal Reset',
     duration: '6 min',
+    durationMinutes: 6,
     intensity: 'Calm',
     copy: 'A simple downshift protocol for airflow awareness after work or before sleep.',
+    equipment: 'Nose strips optional',
+    audioReady: true,
     steps: ['Sit tall', 'Inhale through the nose for 4', 'Exhale through the nose for 6', 'Repeat for 6 minutes'],
     cta: 'Pair with DRIFT Nose Strips',
+    commerceUrl: '/shop',
   },
   {
     id: 'sauna-downshift',
     pillar: 'Rest',
     title: 'Sauna Downshift',
     duration: '22 min',
+    durationMinutes: 22,
     intensity: 'Heat',
     copy: 'A controlled heat ritual for the end of a training day.',
+    equipment: 'Sauna hat and optional botanical blend',
+    audioReady: true,
     steps: ['Warm room entry', 'One quiet heat round', 'Cool water rinse', 'Five minutes seated before screens'],
     cta: 'Pair with Sauna Downshift Kit',
+    commerceUrl: '/shop/sauna-downshift-kit-7',
   },
   {
-    id: 'quiet-rest',
+    id: 'quiet-reset',
     pillar: 'Rest',
     title: 'Quiet Reset',
     duration: '12 min',
+    durationMinutes: 12,
     intensity: 'Recovery',
     copy: 'A no-hero reset for days where the system needs less input.',
+    equipment: 'None',
+    audioReady: true,
     steps: ['Dim light', 'Low nasal breathing', 'No metrics review', 'Plan tomorrow in one line'],
     cta: 'Use when fatigue is high',
+    commerceUrl: null,
+  },
+];
+
+export const programs = [
+  {
+    id: 'seven-day-reset',
+    title: '7-Day Run / Breathe / Rest Reset',
+    pillar: 'System',
+    durationDays: 7,
+    copy: 'A one-week preview that teaches the DRIFT loop: run context, check-in, daily decision, ritual log.',
+    protocolIds: ['hot-miles-prep', 'nasal-reset', 'quiet-reset', 'sauna-downshift'],
+    commerceUrl: null,
+  },
+  {
+    id: 'hot-miles',
+    title: 'Hot Miles',
+    pillar: 'Run',
+    durationDays: 14,
+    copy: 'Heat-aware running rituals for athletes building without forcing the day.',
+    protocolIds: ['hot-miles-prep', 'nasal-reset'],
+    commerceUrl: '/shop',
+  },
+  {
+    id: 'sauna-downshift-program',
+    title: 'Sauna Downshift',
+    pillar: 'Rest',
+    durationDays: 14,
+    copy: 'A conservative heat and cool-down system for closing training days.',
+    protocolIds: ['sauna-downshift', 'quiet-reset'],
+    commerceUrl: '/shop/sauna-downshift-kit-7',
+  },
+  {
+    id: 'race-week-reset',
+    title: 'Race Week Reset',
+    pillar: 'System',
+    durationDays: 7,
+    copy: 'A simple race-week rhythm for control, breath, and lower-input evenings.',
+    protocolIds: ['nasal-reset', 'quiet-reset'],
+    commerceUrl: '/shop',
+  },
+];
+
+export const commerceProducts = [
+  {
+    id: 1,
+    name: 'DRIFT Starter System',
+    pillar: 'system',
+    system: 'starter',
+    price: 72,
+    currency: '$',
+    url: '/shop',
+    protocolIds: ['nasal-reset', 'quiet-reset'],
+    programIds: ['seven-day-reset'],
+  },
+  {
+    id: 2,
+    name: 'Hot Miles Kit',
+    pillar: 'run',
+    system: 'hot_miles',
+    price: 68,
+    currency: '$',
+    url: '/shop',
+    protocolIds: ['hot-miles-prep'],
+    programIds: ['hot-miles'],
+  },
+  {
+    id: 7,
+    name: 'Sauna Downshift Kit',
+    pillar: 'rest',
+    system: 'sauna_downshift',
+    price: 88,
+    currency: '$',
+    url: '/shop/sauna-downshift-kit-7',
+    protocolIds: ['sauna-downshift', 'quiet-reset'],
+    programIds: ['sauna-downshift-program'],
   },
 ];
 
@@ -161,6 +252,12 @@ export const initialCoachState = {
     id: 'local-demo-session',
     authReady: true,
     mode: 'local-demo',
+    csrfToken: null,
+  },
+  profile: {
+    mode: 'guest',
+    portalAccount: false,
+    displayName: 'DRIFT Athlete',
   },
   user: {
     name: 'DRIFT Athlete',
@@ -198,6 +295,7 @@ export const initialCoachState = {
   ],
   coachDecisions: [],
   privacyEvents: [],
+  entitlements: [],
 };
 
 export function loadCoachState() {
@@ -221,6 +319,7 @@ export function normalizeState(state) {
   return {
     ...initialCoachState,
     ...state,
+    profile: { ...initialCoachState.profile, ...(state.profile || {}) },
     strava: { ...initialCoachState.strava, ...(state.strava || {}) },
     session: { ...initialCoachState.session, ...(state.session || {}) },
     activities: Array.isArray(state.activities) ? state.activities : [],
@@ -228,7 +327,26 @@ export function normalizeState(state) {
     ritualLogs: Array.isArray(state.ritualLogs) ? state.ritualLogs : [],
     coachDecisions: Array.isArray(state.coachDecisions) ? state.coachDecisions : [],
     privacyEvents: Array.isArray(state.privacyEvents) ? state.privacyEvents : [],
+    entitlements: Array.isArray(state.entitlements) ? state.entitlements : [],
   };
+}
+
+export function applyBootstrapPayload(currentState, payload) {
+  return normalizeState({
+    ...currentState,
+    ...(payload.state || {}),
+    profile: {
+      ...currentState.profile,
+      mode: payload.profile?.mode || payload.state?.profile?.mode || currentState.profile.mode,
+      portalAccount: Boolean(payload.profile?.portal_account || payload.profile?.portalAccount),
+      displayName: payload.profile?.display_name || payload.profile?.displayName || 'DRIFT Athlete',
+    },
+    session: {
+      ...(payload.state?.session || currentState.session),
+      csrfToken: payload.csrfToken || currentState.session.csrfToken || null,
+    },
+    entitlements: payload.entitlements || currentState.entitlements || [],
+  });
 }
 
 export function connectDemoStrava(state) {
@@ -343,6 +461,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
   let why = 'The run load is manageable and the check-in can support a steady aerobic day.';
   let confidence = 'medium';
   let commerceHint = 'Sauna Downshift Kit';
+  let recommendedProtocolIds = ['nasal-reset', 'sauna-downshift'];
+  let recommendedProductTemplateId = 7;
 
   if (!context.last_run_type || context.last_run_type === 'none') {
     decision = 'control';
@@ -352,6 +472,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
     restProtocol = 'Quiet Reset - 12 minutes, low light, no metrics review.';
     why = 'DRIFT can work without Strava, but run import makes the decision sharper.';
     commerceHint = 'DRIFT Nose Strips';
+    recommendedProtocolIds = ['nasal-reset', 'quiet-reset'];
+    recommendedProductTemplateId = null;
   }
 
   if (readiness >= 74 && context.weekly_run_km < 24 && context.energy >= 7) {
@@ -363,6 +485,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
     why = 'Energy is good and weekly load is still light enough to build without forcing the day.';
     confidence = 'medium';
     commerceHint = 'DRIFT Heat Cap';
+    recommendedProtocolIds = ['hot-miles-prep', 'quiet-reset'];
+    recommendedProductTemplateId = 2;
   }
 
   if (readiness < 52 || fatigue >= 16) {
@@ -374,6 +498,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
     why = 'The check-in suggests the system is already carrying enough stress.';
     confidence = 'high';
     commerceHint = 'DRIFT Nose Strips';
+    recommendedProtocolIds = ['quiet-reset', 'nasal-reset'];
+    recommendedProductTemplateId = null;
   } else if (recentHardRun || (context.last_run_hours_ago !== null && context.last_run_hours_ago <= 30 && context.weekly_effort >= 120)) {
     decision = 'downshift';
     primaryAction = 'Absorb the work. Your next gain comes from closing the loop, not adding more signal.';
@@ -383,6 +509,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
     why = 'A recent hard or long load needs a cleaner landing before the next build.';
     confidence = 'high';
     commerceHint = 'Sauna Downshift Kit';
+    recommendedProtocolIds = ['nasal-reset', 'sauna-downshift'];
+    recommendedProductTemplateId = 7;
   }
 
   if (adjustment === 'make_it_easier' || adjustment === 'feel_worse') {
@@ -394,11 +522,14 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
     why = 'You asked for a lower-input plan, so DRIFT is removing intensity and heat pressure.';
     confidence = 'high';
     commerceHint = 'DRIFT Nose Strips';
+    recommendedProtocolIds = ['quiet-reset'];
+    recommendedProductTemplateId = null;
   }
 
   if (adjustment === 'no_sauna_today') {
     restProtocol = 'Quiet Rest - 12 minutes, low light, no heat exposure.';
     why = `${why} Sauna is optional today; the rest target can be met without heat.`;
+    recommendedProtocolIds = [...recommendedProtocolIds.filter((id) => id !== 'sauna-downshift'), 'quiet-reset'];
   }
 
   if (adjustment === 'ran_harder') {
@@ -421,6 +552,8 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
       confidence,
       safety_note: 'Informational performance guidance only. Not medical advice, diagnosis, injury treatment, or a replacement for a qualified coach.',
       commerce_hint: commerceHint,
+      recommended_protocol_ids: [...new Set(recommendedProtocolIds)],
+      recommended_product_template_id: recommendedProductTemplateId,
     },
     context,
     source,
@@ -458,7 +591,10 @@ export function validateCoachDecision(decision) {
   return (
     decision &&
     required.every((key) => typeof decision[key] === 'string' && decision[key].trim().length > 0) &&
-    ['build', 'control', 'downshift', 'rest'].includes(decision.decision)
+    ['build', 'control', 'downshift', 'rest'].includes(decision.decision) &&
+    ['low', 'medium', 'high'].includes(decision.confidence) &&
+    Array.isArray(decision.recommended_protocol_ids || []) &&
+    Object.prototype.hasOwnProperty.call(decision, 'recommended_product_template_id')
   );
 }
 
@@ -521,22 +657,7 @@ export function combinedTimeline(state) {
 }
 
 export function buildStravaOAuthUrl() {
-  if (typeof window === 'undefined') return null;
-  const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-  const redirectUri = import.meta.env.VITE_STRAVA_REDIRECT_URI || `${window.location.origin}/strava/callback`;
-  const scope = 'activity:read,activity:read_all';
-
-  if (!clientId) return null;
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    approval_prompt: 'auto',
-    scope,
-  });
-
-  return `https://www.strava.com/oauth/authorize?${params.toString()}`;
+  return apiRoutes.stravaConnect;
 }
 
 export const sanitizedFieldList = [

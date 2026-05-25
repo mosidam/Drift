@@ -1,0 +1,20 @@
+{
+    "name": "DRIFT Recovery OS",
+    "summary": "Odoo-native PWA backend for DRIFT Run / Breathe / Rest coaching.",
+    "version": "1.0.0",
+    "category": "Website",
+    "author": "DRIFT",
+    "website": "https://olivierstrails.com",
+    "license": "LGPL-3",
+    "depends": ["website", "website_sale", "portal"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/drift_seed_data.xml",
+        "views/product_template_views.xml",
+        "views/drift_menu_views.xml",
+        "views/drift_templates.xml",
+    ],
+    "assets": {},
+    "application": True,
+    "installable": True,
+}

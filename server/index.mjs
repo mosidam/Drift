@@ -17,7 +17,7 @@ import {
 } from '../src/services/driftApi.js';
 
 const port = Number(process.env.PORT || 8787);
-const openaiModel = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
+const openaiModel = process.env.OPENAI_MODEL || 'gpt-5.4-mini';
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const encryptionKey = Buffer.from(
   process.env.DRIFT_TOKEN_KEY || 'local-dev-token-key-must-be-32b!',
@@ -39,6 +39,8 @@ const responseSchema = {
     'confidence',
     'safety_note',
     'commerce_hint',
+    'recommended_protocol_ids',
+    'recommended_product_template_id',
   ],
   properties: {
     decision: { type: 'string', enum: ['build', 'control', 'downshift', 'rest'] },
@@ -50,6 +52,8 @@ const responseSchema = {
     confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
     safety_note: { type: 'string' },
     commerce_hint: { type: 'string' },
+    recommended_protocol_ids: { type: 'array', items: { type: 'string' } },
+    recommended_product_template_id: { type: ['integer', 'null'] },
   },
 };
 
@@ -61,14 +65,25 @@ const server = createServer(async (request, response) => {
   }
 
   try {
-    if (request.method === 'GET' && url.pathname === '/api/today') {
+    if (request.method === 'GET' && (url.pathname === '/api/today' || url.pathname === '/drift/api/bootstrap')) {
       return send(response, 200, {
         plan: buildTodayPlan(state),
         state: publicState(state),
+        profile: {
+          mode: state.profile?.mode || 'guest',
+          portal_account: false,
+          display_name: 'DRIFT Athlete',
+        },
+        protocols: state.protocols || [],
+        programs: state.programs || [],
+        products: state.products || [],
+        entitlements: state.entitlements || [],
+        privacy: buildPrivacySummary(state),
+        csrfToken: 'local-dev-csrf',
       });
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/check-ins') {
+    if (request.method === 'POST' && (url.pathname === '/api/check-ins' || url.pathname === '/drift/api/check-in')) {
       state = createCheckIn(state, await readJson(request));
       return send(response, 201, {
         plan: buildTodayPlan(state),
@@ -76,7 +91,7 @@ const server = createServer(async (request, response) => {
       });
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/ritual-logs') {
+    if (request.method === 'POST' && (url.pathname === '/api/ritual-logs' || url.pathname === '/drift/api/ritual-log')) {
       state = createRitualLog(state, await readJson(request));
       return send(response, 201, {
         plan: buildTodayPlan(state),
@@ -84,19 +99,19 @@ const server = createServer(async (request, response) => {
       });
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/coach/decision') {
+    if (request.method === 'POST' && (url.pathname === '/api/coach/decision' || url.pathname === '/drift/api/coach/decision')) {
       const decisionPayload = await generateDecision([]);
       return send(response, 201, decisionPayload);
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/coach/adjust') {
+    if (request.method === 'POST' && (url.pathname === '/api/coach/adjust' || url.pathname === '/drift/api/coach/adjust')) {
       const body = await readJson(request);
       const adjustment = body.adjustment || 'why';
       const decisionPayload = await generateDecision([adjustment], adjustment);
       return send(response, 201, decisionPayload);
     }
 
-    if (request.method === 'GET' && url.pathname === '/api/privacy/summary') {
+    if (request.method === 'GET' && (url.pathname === '/api/privacy/summary' || url.pathname === '/drift/api/privacy/summary')) {
       return send(response, 200, buildPrivacySummary(state));
     }
 
@@ -106,7 +121,7 @@ const server = createServer(async (request, response) => {
       });
     }
 
-    if (request.method === 'GET' && url.pathname === '/api/strava/connect') {
+    if (request.method === 'GET' && (url.pathname === '/api/strava/connect' || url.pathname === '/drift/strava/connect')) {
       const clientId = process.env.STRAVA_CLIENT_ID;
       const redirectUri = process.env.STRAVA_REDIRECT_URI || `http://localhost:${port}/api/strava/callback`;
 
@@ -126,7 +141,7 @@ const server = createServer(async (request, response) => {
       return response.end();
     }
 
-    if (request.method === 'GET' && url.pathname === '/api/strava/callback') {
+    if (request.method === 'GET' && (url.pathname === '/api/strava/callback' || url.pathname === '/drift/strava/callback')) {
       const code = url.searchParams.get('code') || 'demo-code';
       encryptedDemoToken = encryptToken(`refresh-token-for-${code}`);
       state = connectDemoStrava(state);
@@ -137,11 +152,11 @@ const server = createServer(async (request, response) => {
       });
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/strava/webhook') {
+    if (request.method === 'POST' && (url.pathname === '/api/strava/webhook' || url.pathname === '/drift/strava/webhook')) {
       return send(response, 202, { accepted: true });
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/strava/export-ritual') {
+    if (request.method === 'POST' && (url.pathname === '/api/strava/export-ritual' || url.pathname === '/drift/strava/export-ritual')) {
       const body = await readJson(request);
       state = enableWriteScope(state);
       state = markRitualExported(state, body.ritualId);

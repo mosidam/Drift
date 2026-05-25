@@ -314,6 +314,7 @@ p {
 .plan-grid,
 .ritual-grid,
 .protocol-grid,
+.program-grid,
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -325,6 +326,7 @@ p {
 .panel,
 .ritual-card,
 .protocol-card,
+.program-card,
 .safety-notice,
 .checkin-panel,
 .plan-pill {
@@ -619,6 +621,7 @@ p {
 .panel,
 .ritual-card,
 .protocol-card,
+.program-card,
 .checkin-panel {
   padding: 20px;
 }
@@ -977,6 +980,60 @@ p {
   gap: 16px;
 }
 
+.program-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.program-card {
+  display: grid;
+  gap: 16px;
+  min-height: 340px;
+}
+
+.program-card h2 {
+  margin: 0;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 0.95;
+}
+
+.program-card p {
+  color: var(--bone);
+  line-height: 1.65;
+}
+
+.program-strip,
+.filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.program-strip span,
+.filter-tabs button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(244, 239, 226, 0.06);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.filter-tabs button.is-active {
+  color: #050505;
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.guided-card {
+  min-height: 420px;
+}
+
 .protocol-card ol {
   display: grid;
   gap: 10px;
@@ -1061,6 +1118,7 @@ p {
   .split-grid,
   .settings-grid,
   .protocol-grid,
+  .program-grid,
   .decision-grid,
   .how-grid,
   .adjust-grid,

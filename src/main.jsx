@@ -14,8 +14,14 @@ createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // The app remains fully usable if offline caching is unavailable.
-    });
+    fetch('/app/sw.js', { method: 'HEAD' })
+      .then((response) => {
+        const type = response.headers.get('content-type') || '';
+        if (!response.ok || !type.includes('javascript')) return null;
+        return navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' });
+      })
+      .catch(() => {
+        // The app remains fully usable if offline caching is unavailable.
+      });
   });
 }

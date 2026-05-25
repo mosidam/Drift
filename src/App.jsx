@@ -28,11 +28,13 @@ import {
 import {
   adjustmentOptions,
   apiRoutes,
+  applyBootstrapPayload,
   buildDeterministicDecision,
   buildPrivacySummary,
   buildSanitizedCoachContext,
   buildStravaOAuthUrl,
   buildTodayPlan,
+  commerceProducts,
   combinedTimeline,
   connectDemoStrava,
   createCheckIn,
@@ -42,25 +44,28 @@ import {
   loadCoachState,
   markRitualExported,
   normalizeState,
+  programs,
   protocols,
   recordCoachDecision,
   saveCoachState,
 } from './services/driftApi.js';
 
-const API_BASE = import.meta.env.VITE_DRIFT_API_BASE || 'http://localhost:8787';
+const API_BASE = import.meta.env.VITE_DRIFT_API_BASE || (import.meta.env.DEV ? 'http://localhost:8787' : '');
+const appPath = (path = '') => `/app${path}`;
+const assetUrl = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 
 const assets = {
-  runner: '/assets/drift-hero-runner.png',
-  sauna: '/assets/drift-sauna-kit.png',
+  runner: assetUrl('/assets/drift-hero-runner.png'),
+  sauna: assetUrl('/assets/drift-sauna-kit.png'),
 };
 
 const navItems = [
-  ['Today', '/today', Home],
-  ['Log', '/log', Plus],
-  ['Coach', '/coach', Brain],
-  ['History', '/history', History],
-  ['Protocols', '/protocols', Waves],
-  ['Settings', '/settings', Settings],
+  ['Today', appPath('/today'), Home],
+  ['Log', appPath('/log'), Plus],
+  ['Coach', appPath('/coach'), Brain],
+  ['Library', appPath('/library'), Waves],
+  ['Programs', appPath('/programs'), CalendarDays],
+  ['Profile', appPath('/profile'), Settings],
 ];
 
 const quickRituals = [
@@ -96,6 +101,11 @@ const quickRituals = [
 
 function App() {
   const [state, setState] = useState(() => loadCoachState());
+  const [catalog, setCatalog] = useState({
+    protocols,
+    programs,
+    products: commerceProducts,
+  });
   const [status, setStatus] = useState({ api: 'loading', coach: 'offline' });
   const plan = useMemo(() => buildTodayPlan(state), [state]);
   const timeline = useMemo(() => combinedTimeline(state), [state]);
@@ -104,10 +114,15 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    apiRequest('/api/today')
+    apiRequest(apiRoutes.bootstrap)
       .then((payload) => {
         if (cancelled) return;
-        setState(normalizeState(payload.state));
+        setState((current) => applyBootstrapPayload(current, payload));
+        setCatalog({
+          protocols: payload.protocols?.length ? payload.protocols : protocols,
+          programs: payload.programs?.length ? payload.programs : programs,
+          products: payload.products?.length ? payload.products : commerceProducts,
+        });
         setStatus({ api: 'live', coach: payload.plan?.source || 'offline' });
       })
       .catch(() => {
@@ -133,8 +148,8 @@ function App() {
 
   const postState = async (path, body, fallback) => {
     try {
-      const payload = await apiRequest(path, { method: 'POST', body });
-      if (payload.state) setState(normalizeState(payload.state));
+      const payload = await apiRequest(path, { method: 'POST', body }, state.session.csrfToken);
+      if (payload.state) setState((current) => applyBootstrapPayload(current, payload));
       setStatus({ api: 'live', coach: payload.decision?.source || payload.plan?.source || status.coach });
       return payload;
     } catch {
@@ -150,27 +165,37 @@ function App() {
       <AppHeader state={state} status={status} />
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<Navigate to="/today" replace />} />
+          <Route path="/" element={<Navigate to={appPath('/today')} replace />} />
+          <Route path="/today" element={<Navigate to={appPath('/today')} replace />} />
+          <Route path="/log" element={<Navigate to={appPath('/log')} replace />} />
+          <Route path="/coach" element={<Navigate to={appPath('/coach')} replace />} />
+          <Route path="/protocols" element={<Navigate to={appPath('/protocols')} replace />} />
+          <Route path="/settings" element={<Navigate to={appPath('/profile')} replace />} />
+          <Route path="/history" element={<Navigate to={appPath('/profile')} replace />} />
           <Route
-            path="/today"
-            element={<TodayPage state={state} plan={plan} status={status} postState={postState} />}
+            path="/app/today"
+            element={<TodayPage state={state} plan={plan} status={status} postState={postState} products={catalog.products} />}
           />
-          <Route path="/log" element={<LogPage state={state} plan={plan} postState={postState} />} />
+          <Route path="/app/log" element={<LogPage state={state} plan={plan} postState={postState} />} />
           <Route
-            path="/coach"
+            path="/app/coach"
             element={<CoachPage state={state} plan={plan} privacy={privacy} postState={postState} />}
           />
           <Route
-            path="/history"
+            path="/app/history"
             element={<HistoryPage state={state} timeline={timeline} updateState={updateState} postState={postState} />}
           />
-          <Route path="/protocols" element={<ProtocolsPage />} />
+          <Route path="/app/library" element={<LibraryPage protocols={catalog.protocols} products={catalog.products} />} />
+          <Route path="/app/protocols" element={<ProtocolsPage protocols={catalog.protocols} />} />
+          <Route path="/app/programs" element={<ProgramsPage programs={catalog.programs} protocols={catalog.protocols} />} />
           <Route
-            path="/settings"
+            path="/app/profile"
             element={<SettingsPage state={state} privacy={privacy} updateState={updateState} />}
           />
-          <Route path="/strava/callback" element={<StravaCallback updateState={updateState} />} />
-          <Route path="*" element={<Navigate to="/today" replace />} />
+          <Route path="/app/privacy" element={<PrivacyPage privacy={privacy} />} />
+          <Route path="/app/strava/callback" element={<StravaCallback updateState={updateState} />} />
+          <Route path="/strava/callback" element={<Navigate to={appPath('/strava/callback')} replace />} />
+          <Route path="*" element={<Navigate to={appPath('/today')} replace />} />
         </Routes>
       </main>
       <BottomNav />
@@ -183,7 +208,7 @@ function AppHeader({ state, status }) {
 
   return (
     <header className="app-header">
-      <Link to="/today" className="brand-lockup" aria-label="DRIFT Coach home">
+      <Link to={appPath('/today')} className="brand-lockup" aria-label="DRIFT Coach home">
         <span>DRIFT</span>
         <small>Recovery OS</small>
       </Link>
@@ -216,17 +241,20 @@ function BottomNav() {
   );
 }
 
-function TodayPage({ state, plan, status, postState }) {
+function TodayPage({ state, plan, status, postState, products }) {
   const context = buildSanitizedCoachContext(state);
   const hasStrava = state.strava.connected && state.activities.length > 0;
   const decisionLabel = decisionLabels[plan.decision];
 
   const generateDecision = () =>
-    postState('/api/coach/decision', {}, (current) => {
+    postState(apiRoutes.coachDecision, {}, (current) => {
       const localContext = buildSanitizedCoachContext(current);
       const localDecision = buildDeterministicDecision(localContext, 'offline');
       return recordCoachDecision(current, localDecision, localContext, 'offline');
     });
+  const recommendedProduct =
+    products.find((product) => product.id === plan.recommended_product_template_id) ||
+    products.find((product) => product.name === plan.commerce_hint);
 
   return (
     <div className="screen today-screen">
@@ -241,7 +269,7 @@ function TodayPage({ state, plan, status, postState }) {
             <button className="button primary" type="button" onClick={generateDecision}>
               <Brain size={17} /> Get today’s decision
             </button>
-            <Link to="/log" className="button ghost">
+            <Link to={appPath('/log')} className="button ghost">
               <Plus size={17} /> Check in
             </Link>
           </div>
@@ -295,8 +323,13 @@ function TodayPage({ state, plan, status, postState }) {
           <img src={assets.sauna} alt="DRIFT sauna ritual kit" />
           <div>
             <p className="eyebrow">Contextual Tool</p>
-            <h3>{plan.commerce_hint}</h3>
+            <h3>{recommendedProduct?.name || plan.commerce_hint}</h3>
             <p>One product hint per day, always secondary to the recovery decision.</p>
+            {recommendedProduct?.url && (
+              <a className="button ghost" href={recommendedProduct.url}>
+                <ArrowRight size={17} /> View in shop
+              </a>
+            )}
           </div>
         </div>
       </section>
@@ -320,7 +353,7 @@ function LogPage({ state, plan, postState }) {
       <CheckInForm
         initial={latestCheckIn}
         onSubmit={(input) =>
-          postState('/api/check-ins', input, (current) => {
+          postState(apiRoutes.checkIn, input, (current) => {
             const withCheckIn = createCheckIn(current, input);
             const context = buildSanitizedCoachContext(withCheckIn);
             return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
@@ -338,7 +371,7 @@ function LogPage({ state, plan, postState }) {
             <RitualCard
               key={ritual.title}
               ritual={ritual}
-              onLog={() => postState('/api/ritual-logs', ritual, (current) => createRitualLog(current, ritual))}
+              onLog={() => postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual))}
             />
           ))}
         </div>
@@ -361,7 +394,7 @@ function CoachPage({ state, plan, privacy, postState }) {
 
   const adjust = async (adjustment) => {
     const payload = await postState(
-      '/api/coach/adjust',
+      apiRoutes.coachAdjust,
       { adjustment },
       (current) => {
         const context = buildSanitizedCoachContext(current, [adjustment]);
@@ -467,7 +500,7 @@ function HistoryPage({ state, timeline, postState }) {
                 <button
                   className="mini-button"
                   disabled={!state.strava.writeScope || item.source.includes('Strava')}
-                  onClick={() => postState('/api/strava/export-ritual', { ritualId: item.id }, (current) => markRitualExported(enableWriteScope(current), item.id))}
+                  onClick={() => postState(apiRoutes.stravaExportRitual, { ritualId: item.id }, (current) => markRitualExported(enableWriteScope(current), item.id))}
                 >
                   {item.source.includes('Strava') ? 'Exported' : state.strava.writeScope ? 'Export' : 'Private'}
                 </button>
@@ -482,7 +515,79 @@ function HistoryPage({ state, timeline, postState }) {
   );
 }
 
-function ProtocolsPage() {
+function LibraryPage({ protocols: protocolCatalog, products }) {
+  const [filter, setFilter] = useState('All');
+  const visibleProtocols =
+    filter === 'All' ? protocolCatalog : protocolCatalog.filter((protocol) => protocol.pillar === filter);
+
+  return (
+    <div className="screen">
+      <PageIntro
+        eyebrow="Library"
+        title="Guided recovery sessions, built around the training day."
+        copy="Browse DRIFT like an app library: short protocols, clear equipment, timer-ready steps, and optional product support."
+      />
+      <section className="filter-tabs" aria-label="Library filters">
+        {['All', 'Run', 'Breathe', 'Rest'].map((item) => (
+          <button key={item} type="button" className={filter === item ? 'is-active' : ''} onClick={() => setFilter(item)}>
+            {item}
+          </button>
+        ))}
+      </section>
+      <section className="protocol-grid">
+        {visibleProtocols.map((protocol) => (
+          <GuidedProtocolCard key={protocol.id} protocol={protocol} products={products} />
+        ))}
+      </section>
+      <SafetyNotice />
+    </div>
+  );
+}
+
+function ProgramsPage({ programs: programCatalog, protocols: protocolCatalog }) {
+  return (
+    <div className="screen">
+      <PageIntro
+        eyebrow="Programs"
+        title="Calm-like paths for Run / Breathe / Rest."
+        copy="Programs turn single rituals into weekly systems. Product purchases can unlock related paths while the free preview stays useful."
+      />
+      <section className="program-grid">
+        {programCatalog.map((program) => (
+          <article className="program-card" key={program.id}>
+            <div className="protocol-top">
+              <CalendarDays size={22} />
+              <span>{program.pillar}</span>
+            </div>
+            <h2>{program.title}</h2>
+            <p>{program.copy}</p>
+            <div className="protocol-meta">
+              <span>
+                <Timer size={15} /> {program.durationDays} days
+              </span>
+              <span>
+                <Lock size={15} /> Purchase unlock-ready
+              </span>
+            </div>
+            <div className="program-strip">
+              {(program.protocolIds || []).slice(0, 3).map((id) => {
+                const protocol = protocolCatalog.find((item) => item.id === id);
+                return <span key={id}>{protocol?.title || id}</span>;
+              })}
+            </div>
+            {program.commerceUrl && (
+              <a className="button ghost" href={program.commerceUrl}>
+                <ArrowRight size={17} /> View linked system
+              </a>
+            )}
+          </article>
+        ))}
+      </section>
+    </div>
+  );
+}
+
+function ProtocolsPage({ protocols: protocolCatalog = protocols }) {
   return (
     <div className="screen">
       <PageIntro
@@ -491,7 +596,7 @@ function ProtocolsPage() {
         copy="Run gives the signal. Breathe and Rest close the loop. DRIFT protocols are practical, not medical."
       />
       <section className="protocol-grid">
-        {protocols.map((protocol) => {
+        {protocolCatalog.map((protocol) => {
           const Icon = protocol.pillar === 'Run' ? Activity : protocol.pillar === 'Breathe' ? Wind : Waves;
           return (
             <article className="protocol-card" key={protocol.id}>
@@ -526,19 +631,62 @@ function ProtocolsPage() {
   );
 }
 
+function GuidedProtocolCard({ protocol, products }) {
+  const Icon = protocol.pillar === 'Run' ? Activity : protocol.pillar === 'Breathe' ? Wind : Waves;
+  const linkedProduct = products.find((product) => (product.protocolIds || []).includes(protocol.id));
+
+  return (
+    <article className="protocol-card guided-card">
+      <div className="protocol-top">
+        <Icon size={22} />
+        <span>{protocol.pillar}</span>
+      </div>
+      <h2>{protocol.title}</h2>
+      <p>{protocol.copy}</p>
+      <div className="protocol-meta">
+        <span>
+          <Timer size={15} /> {protocol.duration}
+        </span>
+        <span>
+          <Zap size={15} /> {protocol.intensity}
+        </span>
+        <span>
+          <ShieldCheck size={15} /> {protocol.audioReady ? 'Audio-ready' : 'Timer-only'}
+        </span>
+      </div>
+      <ol>
+        {protocol.steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      <div className="button-row">
+        <Link to={appPath('/log')} className="button primary">
+          <Timer size={17} /> Start session
+        </Link>
+        {linkedProduct?.url && (
+          <a href={linkedProduct.url} className="button ghost">
+            <ArrowRight size={17} /> {linkedProduct.name}
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function SettingsPage({ state, privacy, updateState }) {
   const oauthUrl = buildStravaOAuthUrl();
 
   const connect = async () => {
-    if (oauthUrl) {
-      window.location.href = oauthUrl;
-      return;
-    }
     try {
-      const payload = await apiRequest('/api/strava/connect');
+      const payload = import.meta.env.DEV ? await apiRequest(apiRoutes.stravaConnect) : null;
+      if (!payload) throw new Error('Redirect to server-side Strava OAuth');
       updateState(payload.state);
     } catch {
-      updateState((current) => connectDemoStrava(current));
+      if (oauthUrl && !import.meta.env.DEV) {
+        window.location.href = `${API_BASE}${oauthUrl}`;
+      } else {
+        updateState((current) => connectDemoStrava(current));
+      }
     }
   };
 
@@ -598,6 +746,9 @@ function SettingsPage({ state, privacy, updateState }) {
             <code>no background mode</code>
             <code>structured output</code>
           </div>
+          <Link to={appPath('/privacy')} className="button ghost">
+            <ShieldCheck size={17} /> Privacy details
+          </Link>
         </article>
         <article className="panel api-panel">
           <div className="panel-heading">
@@ -618,6 +769,49 @@ function SettingsPage({ state, privacy, updateState }) {
   );
 }
 
+function PrivacyPage({ privacy }) {
+  return (
+    <div className="screen">
+      <PageIntro
+        eyebrow="Privacy"
+        title="Server-side AI with minimized context."
+        copy="OpenAI receives only aggregate training and readiness fields. Strava tokens, route names, raw activity payloads, identity, and private notes stay in Odoo."
+      />
+      <section className="privacy-panel">
+        <div>
+          <p className="eyebrow">What goes to OpenAI</p>
+          <h3>{privacy.data_sent_to_openai.length} aggregate fields</h3>
+          <p>{privacy.explanation}</p>
+        </div>
+        <div className="privacy-list">
+          {privacy.data_sent_to_openai.map((field) => (
+            <span key={field}>{field}</span>
+          ))}
+        </div>
+      </section>
+      <section className="privacy-panel">
+        <div>
+          <p className="eyebrow">What stays server-side</p>
+          <h3>Identity, tokens, routes, and notes.</h3>
+          <p>DRIFT uses Odoo as the privacy boundary. The browser never handles OpenAI keys or Strava refresh tokens.</p>
+        </div>
+        <div className="privacy-list">
+          {privacy.data_not_sent_to_openai.map((field) => (
+            <span key={field}>{field}</span>
+          ))}
+        </div>
+      </section>
+      <section className="safety-notice">
+        <ShieldCheck size={20} />
+        <p>
+          OpenAI request policy: <strong>store:false</strong>, structured output only, no background mode, deterministic
+          fallback when the service is unavailable.
+        </p>
+      </section>
+    </div>
+  );
+}
+
 function StravaCallback({ updateState }) {
   useEffect(() => {
     updateState((current) => connectDemoStrava(current));
@@ -629,7 +823,7 @@ function StravaCallback({ updateState }) {
         <p className="eyebrow">Strava Callback</p>
         <h1>Connection captured.</h1>
         <p>For this local MVP, the callback completes in demo mode. Production exchanges the code server-side.</p>
-        <Link to="/today" className="button primary">
+        <Link to={appPath('/today')} className="button primary">
           <ArrowRight size={17} /> Return to Today
         </Link>
       </div>
@@ -669,7 +863,7 @@ function EmptyStravaState() {
           load and last-run timing.
         </p>
       </div>
-      <Link to="/settings" className="button primary">
+      <Link to={appPath('/profile')} className="button primary">
         <Activity size={17} /> Connect Strava
       </Link>
     </section>
@@ -742,7 +936,7 @@ function QuickLogBar({ postState }) {
           <button
             key={ritual.title}
             type="button"
-            onClick={() => postState('/api/ritual-logs', ritual, (current) => createRitualLog(current, ritual))}
+            onClick={() => postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual))}
           >
             <Icon size={18} />
             <span>{ritual.title}</span>
@@ -842,11 +1036,15 @@ function iconForKind(kind) {
   return <Waves size={18} />;
 }
 
-async function apiRequest(path, options = {}) {
+async function apiRequest(path, options = {}, csrfToken = null) {
   const response = await fetch(`${API_BASE}${path}`, {
     method: options.method || 'GET',
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      ...(csrfToken ? { 'x-csrftoken': csrfToken, 'x-drift-csrf': csrfToken } : {}),
+    },
     body: options.body ? JSON.stringify(options.body) : undefined,
+    credentials: API_BASE ? 'omit' : 'include',
   });
 
   if (!response.ok) {

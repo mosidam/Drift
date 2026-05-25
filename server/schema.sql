@@ -24,13 +24,12 @@ create table if not exists activities (
   user_id uuid not null references users(id) on delete cascade,
   strava_activity_id text unique,
   sport text not null,
-  name text not null,
   started_at timestamptz not null,
   distance_km numeric(7, 2),
   moving_minutes integer,
   elevation_m integer,
   relative_effort integer,
-  raw_payload jsonb,
+  privacy_state text not null default 'unknown',
   created_at timestamptz not null default now()
 );
 
@@ -64,6 +63,43 @@ create table if not exists coach_decisions (
   sanitized_context jsonb not null,
   output jsonb not null,
   source text not null check (source in ('openai', 'offline')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists protocols (
+  id uuid primary key,
+  slug text not null unique,
+  pillar text not null check (pillar in ('Run', 'Breathe', 'Rest')),
+  title text not null,
+  duration_minutes integer not null,
+  intensity text not null,
+  equipment text,
+  audio_url text,
+  audio_ready boolean not null default true,
+  product_template_id integer,
+  steps jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists programs (
+  id uuid primary key,
+  slug text not null unique,
+  title text not null,
+  pillar text not null check (pillar in ('Run', 'Breathe', 'Rest', 'System')),
+  duration_days integer not null,
+  summary text not null,
+  product_template_id integer,
+  protocol_slugs text[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists entitlements (
+  id uuid primary key,
+  user_id uuid not null references users(id) on delete cascade,
+  product_template_id integer not null,
+  protocol_slugs text[] not null default '{}',
+  program_slugs text[] not null default '{}',
+  state text not null check (state in ('active', 'revoked')),
   created_at timestamptz not null default now()
 );
 

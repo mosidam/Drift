@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="drift_protocol_tree" model="ir.ui.view">
+        <field name="name">drift.protocol.tree</field>
+        <field name="model">drift.protocol</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence"/>
+                <field name="name"/>
+                <field name="pillar"/>
+                <field name="duration_minutes"/>
+                <field name="intensity"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="drift_protocol_form" model="ir.ui.view">
+        <field name="name">drift.protocol.form</field>
+        <field name="model">drift.protocol</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="slug"/>
+                        <field name="pillar"/>
+                        <field name="duration_minutes"/>
+                        <field name="intensity"/>
+                        <field name="equipment"/>
+                        <field name="audio_ready"/>
+                        <field name="audio_url"/>
+                        <field name="product_template_id"/>
+                        <field name="summary"/>
+                    </group>
+                    <field name="step_ids">
+                        <tree editable="bottom">
+                            <field name="sequence"/>
+                            <field name="name"/>
+                            <field name="duration_seconds"/>
+                            <field name="cue"/>
+                        </tree>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="drift_program_tree" model="ir.ui.view">
+        <field name="name">drift.program.tree</field>
+        <field name="model">drift.program</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence"/>
+                <field name="name"/>
+                <field name="pillar"/>
+                <field name="duration_days"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="drift_program_form" model="ir.ui.view">
+        <field name="name">drift.program.form</field>
+        <field name="model">drift.program</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="slug"/>
+                        <field name="pillar"/>
+                        <field name="duration_days"/>
+                        <field name="product_template_id"/>
+                        <field name="summary"/>
+                    </group>
+                    <field name="day_ids">
+                        <tree editable="bottom">
+                            <field name="day_index"/>
+                            <field name="title"/>
+                            <field name="protocol_id"/>
+                            <field name="action"/>
+                        </tree>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_drift_protocol" model="ir.actions.act_window">
+        <field name="name">Protocols</field>
+        <field name="res_model">drift.protocol</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="action_drift_program" model="ir.actions.act_window">
+        <field name="name">Programs</field>
+        <field name="res_model">drift.program</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_drift_root" name="DRIFT" sequence="45"/>
+    <menuitem id="menu_drift_protocols" name="Protocols" parent="menu_drift_root" action="action_drift_protocol" sequence="10"/>
+    <menuitem id="menu_drift_programs" name="Programs" parent="menu_drift_root" action="action_drift_program" sequence="20"/>
+</odoo>

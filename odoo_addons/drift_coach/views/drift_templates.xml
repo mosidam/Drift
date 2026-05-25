@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="app_shell_fallback" name="DRIFT Recovery OS App">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="container py-5">
+                    <h1>DRIFT Recovery OS</h1>
+                    <p>The DRIFT app shell is installed. Build the PWA with <code>npm run build:odoo</code> to publish the React interface at <code>/app/today</code>.</p>
+                    <a class="btn btn-primary" href="/shop">Open shop</a>
+                </section>
+            </div>
+        </t>
+    </template>
+</odoo>
