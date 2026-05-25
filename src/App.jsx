@@ -215,7 +215,10 @@ function App() {
           />
           <Route path="/app/library" element={<LibraryPage protocols={catalog.protocols} products={catalog.products} />} />
           <Route path="/app/protocols" element={<ProtocolsPage protocols={catalog.protocols} />} />
-          <Route path="/app/programs" element={<ProgramsPage state={state} programs={catalog.programs} protocols={catalog.protocols} />} />
+          <Route
+            path="/app/programs"
+            element={<ProgramsPage state={state} programs={catalog.programs} protocols={catalog.protocols} products={catalog.products} />}
+          />
           <Route
             path="/app/profile"
             element={<SettingsPage state={state} postState={postState} />}
@@ -598,7 +601,7 @@ function LibraryPage({ protocols: protocolCatalog, products }) {
   );
 }
 
-function ProgramsPage({ state, programs: programCatalog, protocols: protocolCatalog }) {
+function ProgramsPage({ state, programs: programCatalog, protocols: protocolCatalog, products }) {
   return (
     <div className="screen">
       <PageIntro
@@ -608,7 +611,9 @@ function ProgramsPage({ state, programs: programCatalog, protocols: protocolCata
       />
       <section className="program-grid">
         {programCatalog.map((program) => {
-          const status = programAccessStatus(state, program);
+          const linkedProduct = products.find((product) => (product.programIds || []).includes(program.id));
+          const commerceUrl = program.commerceUrl || (program.id === 'seven-day-reset' ? null : linkedProduct?.url);
+          const status = programAccessStatus(state, program, linkedProduct, commerceUrl);
           return (
             <article className="program-card" key={program.id}>
               <div className="program-card-head">
@@ -641,8 +646,8 @@ function ProgramsPage({ state, programs: programCatalog, protocols: protocolCata
                 <Link to={appPath('/log')} className="button primary">
                   <Timer size={17} /> {status.key === 'preview' ? 'Start preview' : 'Start program'}
                 </Link>
-                {program.commerceUrl && status.key !== 'unlocked' && (
-                  <a className="button ghost" href={program.commerceUrl}>
+                {commerceUrl && status.key !== 'unlocked' && (
+                  <a className="button ghost" href={commerceUrl}>
                     <ArrowRight size={17} /> Unlock with kit
                   </a>
                 )}
@@ -655,12 +660,13 @@ function ProgramsPage({ state, programs: programCatalog, protocols: protocolCata
   );
 }
 
-function programAccessStatus(state, program) {
+function programAccessStatus(state, program, linkedProduct, commerceUrl) {
   const entitlements = Array.isArray(state.entitlements) ? state.entitlements : [];
   const isUnlocked = entitlements.some((entitlement) => {
     if (entitlement.state && entitlement.state !== 'active') return false;
     return (
       (program.productTemplateId && entitlement.productTemplateId === program.productTemplateId) ||
+      (linkedProduct?.id && entitlement.productTemplateId === linkedProduct.id) ||
       (Array.isArray(entitlement.programIds) && entitlement.programIds.includes(program.id))
     );
   });
@@ -668,7 +674,7 @@ function programAccessStatus(state, program) {
   if (isUnlocked) {
     return { key: 'unlocked', label: 'Unlocked', detail: 'Full path is active' };
   }
-  if (program.commerceUrl) {
+  if (commerceUrl) {
     return { key: 'preview', label: 'Preview', detail: 'Linked kit unlocks full path' };
   }
   return { key: 'free', label: 'Free', detail: 'Full preview included' };
