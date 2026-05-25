@@ -116,6 +116,10 @@
                         <field name="strava_client_secret" password="True" placeholder="Paste new secret to replace current secret"/>
                         <field name="strava_redirect_uri" placeholder="https://your-domain.com/drift/strava/callback"/>
                     </group>
+                    <group string="Mobile Install">
+                        <field name="ios_app_store_url" placeholder="https://apps.apple.com/app/..."/>
+                        <field name="android_play_store_url" placeholder="https://play.google.com/store/apps/details?id=run.drift.coach"/>
+                    </group>
                 </sheet>
                 <footer>
                     <button name="action_save" type="object" string="Save Settings" class="btn-primary"/>

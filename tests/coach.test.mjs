@@ -111,6 +111,9 @@ const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'ut
 const nativeRuntime = await readFile(new URL('../src/nativeRuntime.js', import.meta.url), 'utf8');
 const capacitorConfig = await readFile(new URL('../capacitor.config.ts', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
+assert.match(odooController, /\/download/);
+assert.match(odooController, /ios_app_store_url/);
+assert.match(odooController, /android_play_store_url/);
 assert.match(odooController, /\/app\/login/);
 assert.match(odooController, /\/app\/signup/);
 assert.match(odooController, /\/app\/<path:path>/);
@@ -128,6 +131,9 @@ assert.match(odooModels, /class DriftSettings/);
 assert.match(odooModels, /class SaleOrder/);
 assert.match(odooModels, /_drift_grant_entitlements/);
 assert.match(odooModels, /protocolIds/);
+assert.match(odooModels, /_mobile_payload/);
+assert.match(odooModels, /ios_app_store_url/);
+assert.match(odooModels, /android_play_store_url/);
 assert.match(odooModels, /encrypted_access_token/);
 assert.match(odooModels, /strava_activity_id/);
 assert.doesNotMatch(odooModels, /raw_payload/);
@@ -144,6 +150,8 @@ assert.match(pwaSource, /Create free account|Your free home for recovery decisio
 assert.match(pwaSource, /\/app\/signup\?redirect=\/app\/today/);
 assert.match(pwaSource, /programAccessStatus/);
 assert.match(pwaSource, /Unlock with kit/);
+assert.match(pwaSource, /InstallPage/);
+assert.match(pwaSource, /\/app\/install/);
 assert.match(pwaSource, /Sync Strava/);
 assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP|authorization code|service keys/);
 assert.match(capacitorConfig, /appId:\s*'run\.drift\.coach'/);
@@ -152,5 +160,6 @@ assert.match(capacitorConfig, /cleartext:\s*false/);
 assert.match(nativeRuntime, /Capacitor\.isNativePlatform/);
 assert.match(nativeRuntime, /SplashScreen\.hide/);
 assert.match(nativeRuntime, /appUrlOpen/);
+assert.match(nativeRuntime, /\/app\/install/);
 
 console.log('coach privacy tests passed');

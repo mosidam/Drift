@@ -102,6 +102,7 @@ class DriftProfile(models.Model):
             "products": self.env["product.template"].sudo().search([("drift_pillar", "!=", False)])._drift_app_payload(),
             "entitlements": self.env["drift.entitlement"].sudo().search([("profile_id", "=", self.id)])._app_payload(),
             "privacy": self.env["drift.privacy.event"].sudo().summary_for_profile(self),
+            "mobile": self._mobile_payload(),
         }
 
     def _public_payload(self):
@@ -147,6 +148,15 @@ class DriftProfile(models.Model):
             "writeScope": bool(account and "activity:write" in (account.scope or "")),
             "lastSync": account.last_sync_at.isoformat() if account and account.last_sync_at else None,
             "mode": "server-oauth" if account else "not-connected",
+        }
+
+    def _mobile_payload(self):
+        params = self.env["ir.config_parameter"].sudo()
+        return {
+            "downloadUrl": "/download",
+            "installUrl": "/app/install",
+            "iosAppStoreUrl": params.get_param("drift.ios_app_store_url") or "",
+            "androidPlayStoreUrl": params.get_param("drift.android_play_store_url") or "",
         }
 
 
@@ -973,6 +983,8 @@ class DriftSettings(models.TransientModel):
     )
     strava_redirect_uri = fields.Char(string="Strava Redirect URI")
     strava_status = fields.Char(readonly=True)
+    ios_app_store_url = fields.Char(string="iOS App Store URL")
+    android_play_store_url = fields.Char(string="Google Play URL")
 
     @api.model
     def default_get(self, fields_list):
@@ -985,6 +997,8 @@ class DriftSettings(models.TransientModel):
                 "strava_client_id": params.get_param("drift.strava_client_id") or "",
                 "strava_redirect_uri": params.get_param("drift.strava_redirect_uri") or "",
                 "strava_status": self._secret_status("drift.strava_client_secret_encrypted", "drift.strava_client_secret_last4"),
+                "ios_app_store_url": params.get_param("drift.ios_app_store_url") or "",
+                "android_play_store_url": params.get_param("drift.android_play_store_url") or "",
             }
         )
         return values
@@ -995,6 +1009,8 @@ class DriftSettings(models.TransientModel):
         params.set_param("drift.openai_model", self.openai_model or "gpt-5.4-mini")
         params.set_param("drift.strava_client_id", self.strava_client_id or "")
         params.set_param("drift.strava_redirect_uri", self.strava_redirect_uri or "")
+        params.set_param("drift.ios_app_store_url", self.ios_app_store_url or "")
+        params.set_param("drift.android_play_store_url", self.android_play_store_url or "")
         if self.openai_api_key:
             self._store_secret("drift.openai_api_key", self.openai_api_key)
         if self.strava_client_secret:

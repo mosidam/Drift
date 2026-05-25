@@ -23,6 +23,7 @@ APP_ROUTES = {
     "programs",
     "profile",
     "privacy",
+    "install",
     "history",
     "settings",
     "strava/callback",
@@ -30,6 +31,18 @@ APP_ROUTES = {
 
 
 class DriftCoachController(http.Controller):
+    @http.route("/download", type="http", auth="public", website=True, sitemap=False)
+    def download_redirect(self, **kwargs):
+        user_agent = (request.httprequest.headers.get("User-Agent") or "").lower()
+        ios_url = self._config("ios_app_store_url", "DRIFT_IOS_APP_STORE_URL")
+        android_url = self._config("android_play_store_url", "DRIFT_ANDROID_PLAY_STORE_URL")
+        if kwargs.get("web") != "1":
+            if ios_url and any(token in user_agent for token in ("iphone", "ipad", "ipod")):
+                return redirect(ios_url, code=302)
+            if android_url and "android" in user_agent:
+                return redirect(android_url, code=302)
+        return redirect("/app/install", code=302)
+
     @http.route("/app/login", type="http", auth="public", website=True, sitemap=False)
     def app_login(self, **kwargs):
         redirect_url = kwargs.get("redirect") or "/app/today"

@@ -11,6 +11,7 @@ const appRoutes = new Set([
   '/app/library',
   '/app/programs',
   '/app/profile',
+  '/app/install',
   '/app/privacy',
 ]);
 

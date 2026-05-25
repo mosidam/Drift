@@ -297,6 +297,12 @@ export const initialCoachState = {
   coachDecisions: [],
   privacyEvents: [],
   entitlements: [],
+  mobile: {
+    downloadUrl: '/download',
+    installUrl: '/app/install',
+    iosAppStoreUrl: '',
+    androidPlayStoreUrl: '',
+  },
 };
 
 export function loadCoachState() {
@@ -323,6 +329,7 @@ export function normalizeState(state) {
     profile: { ...initialCoachState.profile, ...(state.profile || {}) },
     strava: { ...initialCoachState.strava, ...(state.strava || {}) },
     session: { ...initialCoachState.session, ...(state.session || {}) },
+    mobile: { ...initialCoachState.mobile, ...(state.mobile || {}) },
     activities: Array.isArray(state.activities) ? state.activities : [],
     checkIns: Array.isArray(state.checkIns) && state.checkIns.length ? state.checkIns : [seedCheckIn],
     ritualLogs: Array.isArray(state.ritualLogs) ? state.ritualLogs : [],
@@ -347,6 +354,10 @@ export function applyBootstrapPayload(currentState, payload) {
       csrfToken: payload.csrfToken || currentState.session.csrfToken || null,
     },
     entitlements: payload.entitlements || currentState.entitlements || [],
+    mobile: {
+      ...currentState.mobile,
+      ...(payload.mobile || {}),
+    },
   });
 }
 

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Check,
   CircleAlert,
+  Download,
   Flame,
   Gauge,
   Home,
@@ -200,6 +201,7 @@ function App() {
           <Route path="/protocols" element={<Navigate to={appPath('/protocols')} replace />} />
           <Route path="/settings" element={<Navigate to={appPath('/profile')} replace />} />
           <Route path="/history" element={<Navigate to={appPath('/profile')} replace />} />
+          <Route path="/download" element={<Navigate to={appPath('/install')} replace />} />
           <Route
             path="/app/today"
             element={<TodayPage state={state} plan={plan} status={status} postState={postState} products={catalog.products} />}
@@ -223,6 +225,7 @@ function App() {
             path="/app/profile"
             element={<SettingsPage state={state} postState={postState} />}
           />
+          <Route path="/app/install" element={<InstallPage state={state} />} />
           <Route path="/app/privacy" element={<PrivacyPage privacy={privacy} />} />
           <Route path="/app/strava/callback" element={<StravaCallback updateState={updateState} />} />
           <Route path="/strava/callback" element={<Navigate to={appPath('/strava/callback')} replace />} />
@@ -839,6 +842,9 @@ function SettingsPage({ state, postState }) {
           <p>
             Add DRIFT to your phone and open it after training: check in, get the decision, complete the ritual.
           </p>
+          <Link to={appPath('/install')} className="button ghost">
+            <Download size={17} /> Install DRIFT
+          </Link>
         </article>
         <article className="panel">
           <div className="panel-heading">
@@ -853,6 +859,91 @@ function SettingsPage({ state, postState }) {
             <ShieldCheck size={17} /> Privacy details
           </Link>
         </article>
+      </section>
+    </div>
+  );
+}
+
+function InstallPage({ state }) {
+  const iosUrl = state.mobile?.iosAppStoreUrl;
+  const androidUrl = state.mobile?.androidPlayStoreUrl;
+  const hasStoreLinks = Boolean(iosUrl || androidUrl);
+
+  return (
+    <div className="screen install-screen">
+      <section className="hero-card install-hero">
+        <img src={assets.runner} alt="" />
+        <div className="hero-scrim" />
+        <div className="hero-copy">
+          <p className="eyebrow">Install DRIFT</p>
+          <h1>Install DRIFT on your phone.</h1>
+          <p>Open DRIFT after training: check in, get the day’s Run / Breathe / Rest decision, and log the ritual before the day drifts away.</p>
+          <div className="hero-actions">
+            <Link to={appPath('/today')} className="button primary">
+              <ArrowRight size={17} /> Open DRIFT
+            </Link>
+            <a className="button ghost" href="/download">
+              <Download size={17} /> Download link
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="install-grid">
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Today</p>
+              <h3>Install as a web app.</h3>
+            </div>
+            <Smartphone size={22} />
+          </div>
+          <p>On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, use the browser Install App prompt.</p>
+        </article>
+        <article className="panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">Native App</p>
+              <h3>{hasStoreLinks ? 'Store links are ready.' : 'App Store release path is prepared.'}</h3>
+            </div>
+            <Download size={22} />
+          </div>
+          <p>
+            DRIFT is now structured for an iOS and Android wrapper. Store buttons will point to the native app as soon as the listings are live.
+          </p>
+          <div className="button-row">
+            {iosUrl && (
+              <a className="button primary" href={iosUrl}>
+                App Store
+              </a>
+            )}
+            {androidUrl && (
+              <a className="button primary" href={androidUrl}>
+                Google Play
+              </a>
+            )}
+            {!hasStoreLinks && (
+              <Link className="button ghost" to={appPath('/today')}>
+                Start free
+              </Link>
+            )}
+          </div>
+        </article>
+      </section>
+
+      <section className="how-grid" aria-label="Install benefits">
+        {[
+          ['Daily decision', 'Build, Control, Downshift, or Rest in under 30 seconds.'],
+          ['Saved rhythm', 'Check-ins, rituals, streaks, and programs stay with your account.'],
+          ['Strava context', 'Run load sharpens the plan when you connect it.'],
+          ['Shop unlocks', 'DRIFT kits can unlock related guided programs.'],
+        ].map(([title, copy], index) => (
+          <article key={title}>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{title}</h3>
+            <p>{copy}</p>
+          </article>
+        ))}
       </section>
     </div>
   );
