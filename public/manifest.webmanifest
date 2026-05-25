@@ -1,0 +1,37 @@
+{
+  "name": "DRIFT Coach",
+  "short_name": "DRIFT",
+  "description": "A recovery operating system for Strava athletes.",
+  "start_url": "/today",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "categories": ["fitness", "health", "sports"],
+  "icons": [
+    {
+      "src": "/icons/drift-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "url": "/today"
+    },
+    {
+      "name": "Log Ritual",
+      "short_name": "Log",
+      "url": "/log"
+    },
+    {
+      "name": "Coach",
+      "short_name": "Coach",
+      "url": "/coach"
+    }
+  ]
+}

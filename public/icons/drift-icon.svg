@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DRIFT Coach">
+  <rect width="512" height="512" rx="96" fill="#050505"/>
+  <path d="M96 116h164c92 0 156 57 156 140s-64 140-156 140H96V116Zm78 70v140h80c48 0 82-28 82-70s-34-70-82-70h-80Z" fill="#f4efe2"/>
+  <path d="M98 410h316" stroke="#d87435" stroke-width="28" stroke-linecap="round"/>
+</svg>

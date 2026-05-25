@@ -1,0 +1,98 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import {
+  buildDeterministicDecision,
+  buildPrivacySummary,
+  buildSanitizedCoachContext,
+  initialCoachState,
+  recordCoachDecision,
+  validateCoachDecision,
+} from '../src/services/driftApi.js';
+
+const sensitiveState = {
+  ...initialCoachState,
+  user: {
+    name: 'Private Person',
+    email: 'private@example.com',
+    timezone: 'Europe/Warsaw',
+  },
+  activities: [
+    {
+      id: 'private-activity',
+      source: 'Strava',
+      sport: 'Run',
+      name: 'Secret home route name',
+      raw_payload: {
+        access_token: 'strava-access-token',
+        refresh_token: 'strava-refresh-token',
+        map: { polyline: 'private-location-polyline' },
+      },
+      startedAt: new Date().toISOString(),
+      distanceKm: 10,
+      movingMinutes: 50,
+      elevationM: 100,
+      effort: 'Moderate',
+      relativeEffort: 80,
+    },
+  ],
+  checkIns: [
+    {
+      id: 'private-note',
+      createdAt: new Date().toISOString(),
+      energy: 5,
+      soreness: 5,
+      stress: 6,
+      sleep: 'okay',
+      note: 'This exact private note must not leave the backend.',
+    },
+  ],
+};
+
+const context = buildSanitizedCoachContext(sensitiveState, ['no_sauna_today']);
+const serializedContext = JSON.stringify(context);
+
+assert.deepEqual(Object.keys(context).sort(), [
+  'breath_logs_7d',
+  'energy',
+  'last_run_hours_ago',
+  'last_run_type',
+  'sauna_logs_7d',
+  'sleep_quality',
+  'soreness',
+  'stress',
+  'user_constraints',
+  'weekly_effort',
+  'weekly_run_km',
+].sort());
+
+for (const forbidden of [
+  'Private Person',
+  'private@example.com',
+  'Secret home route name',
+  'This exact private note',
+  'access_token',
+  'refresh_token',
+  'private-location-polyline',
+]) {
+  assert.equal(serializedContext.includes(forbidden), false, `sanitized context leaked ${forbidden}`);
+}
+
+const fallbackDecision = buildDeterministicDecision(context, 'offline');
+assert.equal(validateCoachDecision(fallbackDecision), true);
+assert.match(fallbackDecision.safety_note, /not medical advice/i);
+
+const stateWithDecision = recordCoachDecision(sensitiveState, fallbackDecision, context, 'offline');
+const privacy = buildPrivacySummary(stateWithDecision);
+assert.equal(privacy.openai_store, false);
+assert.equal(privacy.background_mode, false);
+assert.equal(privacy.data_sent_to_openai.includes('weekly_run_km'), true);
+assert.equal(privacy.data_not_sent_to_openai.includes('free-text check-in notes'), true);
+
+const serverSource = await readFile(new URL('../server/index.mjs', import.meta.url), 'utf8');
+assert.match(serverSource, /store:\s*false/);
+assert.doesNotMatch(serverSource, /background:\s*true/);
+assert.match(serverSource, /\/api\/coach\/decision/);
+assert.match(serverSource, /\/api\/coach\/adjust/);
+assert.match(serverSource, /\/api\/privacy\/summary/);
+
+console.log('coach privacy tests passed');
