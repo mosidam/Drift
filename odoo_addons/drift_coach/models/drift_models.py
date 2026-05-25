@@ -148,6 +148,14 @@ class DriftProfile(models.Model):
     def _strava_payload(self):
         self.ensure_one()
         account = self.strava_account_ids[:1]
+        params = self.env["ir.config_parameter"].sudo()
+        client_id = params.get_param("drift.strava_client_id") or tools.config.get("drift_strava_client_id") or os.environ.get("STRAVA_CLIENT_ID")
+        client_secret = (
+            params.get_param("drift.strava_client_secret_encrypted")
+            or params.get_param("drift.strava_client_secret")
+            or tools.config.get("drift_strava_client_secret")
+            or os.environ.get("STRAVA_CLIENT_SECRET")
+        )
         return {
             "connected": bool(account),
             "athleteName": "Connected athlete" if account else None,
@@ -155,6 +163,7 @@ class DriftProfile(models.Model):
             "writeScope": bool(account and "activity:write" in (account.scope or "")),
             "lastSync": account.last_sync_at.isoformat() if account and account.last_sync_at else None,
             "mode": "server-oauth" if account else "not-connected",
+            "oauthConfigured": bool(client_id and client_secret),
         }
 
     def _mobile_payload(self):
