@@ -725,22 +725,35 @@
                         grid-template-columns: 1fr;
                     }
                     .drift-tryon {
-                        min-height: 940px;
+                        min-height: 1060px;
                         grid-template-columns: 1fr;
                         align-items: end;
+                        align-content: start;
+                        padding-top: 88px;
+                        padding-bottom: 38px;
                         background-position: center;
+                    }
+                    .drift-tryon__canvas {
+                        inset: 300px 0 430px;
                     }
                     .drift-tryon::after {
                         background:
-                            linear-gradient(0deg, rgba(5, 5, 5, .9), rgba(5, 5, 5, .12) 52%, rgba(5, 5, 5, .72));
+                            linear-gradient(0deg, rgba(5, 5, 5, .9), rgba(5, 5, 5, .24) 44%, rgba(5, 5, 5, .78));
                     }
                     .drift-tryon__copy {
                         align-self: start;
                         max-width: 560px;
                     }
+                    .drift-tryon__copy h2 {
+                        max-width: 360px;
+                    }
+                    .drift-tryon__copy p:not(.drift-sku__eyebrow) {
+                        display: none;
+                    }
                     .drift-tryon__controls {
                         justify-self: stretch;
                         width: 100%;
+                        margin-top: 430px;
                     }
                     .drift-sku__hero {
                         min-height: auto;

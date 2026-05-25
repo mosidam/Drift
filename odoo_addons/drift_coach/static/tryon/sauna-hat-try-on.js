@@ -26057,7 +26057,7 @@ function Mm(r) {
   const s = new Dt(31, 1, 0.1, 100);
   s.position.set(0.12, -0.85, 12.4);
   const a = new Ft();
-  a.rotation.y = Hn.man.rotation, i.add(a);
+  a.rotation.y = Hn.man.rotation, a.position.y = -0.24, i.add(a);
   const o = Sm(), { bodyGroup: l, hatAnchor: c, hatGroup: u, hatMaterial: d, trimMaterial: h, seamMaterial: f, wardrobe: g, fallbackHatGroup: v } = ym(a, o), m = Pm(i), p = {
     color: "black",
     dragging: !1,
@@ -26071,8 +26071,8 @@ function Mm(r) {
   const M = Tm(a, l, c, g, p);
   Em(u, v, o), M.load(p.model);
   const T = () => {
-    const _ = r.getBoundingClientRect(), b = Math.max(320, Math.floor(_.width)), P = Math.max(520, Math.floor(_.height));
-    n.setSize(b, P, !1), s.aspect = b / P, s.position.z = b < 720 ? 14.5 : 12.4, s.position.y = -0.85, s.updateProjectionMatrix();
+    const _ = e.getBoundingClientRect(), b = Math.max(320, Math.floor(_.width)), P = Math.max(520, Math.floor(_.height));
+    n.setSize(b, P, !1), s.aspect = b / P, s.position.z = b < 720 ? 15.4 : 12.8, s.position.y = -0.85, s.updateProjectionMatrix();
   }, y = () => {
     const _ = fo[p.color] || fo.black, b = po[p.variant] || po.classic, P = vm[p.trim] || _.trim, C = Hn[p.model] || Hn.man;
     d.color.set(_.hat), h.color.set(P), f.color.set(P).multiplyScalar(0.72);

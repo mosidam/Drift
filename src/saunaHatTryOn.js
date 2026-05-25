@@ -74,6 +74,7 @@ function createTryOn(root) {
 
   const avatar = new THREE.Group();
   avatar.rotation.y = MODEL_CONFIG.man.rotation;
+  avatar.position.y = -0.24;
   scene.add(avatar);
 
   const materials = createMaterials();
@@ -95,12 +96,12 @@ function createTryOn(root) {
   modelController.load(state.model);
 
   const resize = () => {
-    const bounds = root.getBoundingClientRect();
+    const bounds = canvasMount.getBoundingClientRect();
     const width = Math.max(320, Math.floor(bounds.width));
     const height = Math.max(520, Math.floor(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.position.z = width < 720 ? 14.5 : 12.4;
+    camera.position.z = width < 720 ? 15.4 : 12.8;
     camera.position.y = -0.85;
     camera.updateProjectionMatrix();
   };
