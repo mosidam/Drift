@@ -158,7 +158,7 @@ class DriftCoachController(http.Controller):
     def strava_callback(self, **kwargs):
         profile, _guest_key = self._current_profile()
         code = kwargs.get("code")
-        if not code or not self._config("strava_client_secret", "STRAVA_CLIENT_SECRET"):
+        if not code or not self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"):
             self._connect_demo_strava(profile)
             return redirect("/app/today?strava=demo", code=302)
 
@@ -326,7 +326,7 @@ class DriftCoachController(http.Controller):
         data = urllib.parse.urlencode(
             {
                 "client_id": self._config("strava_client_id", "STRAVA_CLIENT_ID"),
-                "client_secret": self._config("strava_client_secret", "STRAVA_CLIENT_SECRET"),
+                "client_secret": self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"),
                 "code": code,
                 "grant_type": "authorization_code",
                 "redirect_uri": redirect_uri,
@@ -342,6 +342,13 @@ class DriftCoachController(http.Controller):
             or tools.config.get(f"drift_{key}")
             or os.environ.get(env_key)
         )
+
+    def _secret_config(self, key, env_key):
+        params = request.env["ir.config_parameter"].sudo()
+        encrypted = params.get_param(f"drift.{key}_encrypted")
+        if encrypted:
+            return request.env["drift.strava.account"].sudo().decrypt_token(encrypted)
+        return params.get_param(f"drift.{key}") or tools.config.get(f"drift_{key}") or os.environ.get(env_key)
 
     @staticmethod
     def _scale(value, default):

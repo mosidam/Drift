@@ -104,6 +104,8 @@ assert.match(odooController, /\/drift\/api\/bootstrap/);
 assert.match(odooController, /\/app\/<path:path>/);
 assert.match(odooController, /X-CSRFToken/);
 assert.match(odooModels, /store\": False/);
+assert.equal(odooModels.includes('drift.openai_api_key_encrypted'), true);
+assert.match(odooModels, /class DriftSettings/);
 assert.match(odooModels, /encrypted_access_token/);
 assert.doesNotMatch(odooModels, /raw_payload/);
 assert.doesNotMatch(odooModels, /route_name/);

@@ -532,11 +532,7 @@ class DriftCoachDecision(models.Model):
 
     @api.model
     def _generate_openai_decision(self, context):
-        api_key = (
-            self.env["ir.config_parameter"].sudo().get_param("drift.openai_api_key")
-            or tools.config.get("drift_openai_api_key")
-            or os.environ.get("OPENAI_API_KEY")
-        )
+        api_key = self._openai_api_key()
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY not configured")
 
@@ -596,6 +592,18 @@ class DriftCoachDecision(models.Model):
         if not text:
             raise RuntimeError("OpenAI response missing output_text")
         return json.loads(text)
+
+    @api.model
+    def _openai_api_key(self):
+        params = self.env["ir.config_parameter"].sudo()
+        encrypted = params.get_param("drift.openai_api_key_encrypted")
+        if encrypted:
+            return self.env["drift.strava.account"].sudo().decrypt_token(encrypted)
+        return (
+            params.get_param("drift.openai_api_key")
+            or tools.config.get("drift_openai_api_key")
+            or os.environ.get("OPENAI_API_KEY")
+        )
 
     @api.model
     def response_schema(self):
@@ -834,9 +842,7 @@ class DriftPrivacyEvent(models.Model):
     def summary_for_profile(self, profile):
         last = self.search([("profile_id", "=", profile.id)], limit=1)
         openai_configured = bool(
-            self.env["ir.config_parameter"].sudo().get_param("drift.openai_api_key")
-            or tools.config.get("drift_openai_api_key")
-            or os.environ.get("OPENAI_API_KEY")
+            self.env["drift.coach.decision"].sudo()._openai_api_key()
         )
         return {
             "mode": "Minimized Context",
@@ -890,6 +896,83 @@ class DriftEntitlement(models.Model):
             }
             for record in self
         ]
+
+
+class DriftSettings(models.TransientModel):
+    _name = "drift.settings"
+    _description = "DRIFT Integration Settings"
+
+    openai_api_key = fields.Char(
+        string="New OpenAI API Key",
+        help="Paste a new key to replace the encrypted server-side key. The current key is never displayed.",
+        groups="base.group_system",
+    )
+    openai_key_status = fields.Char(readonly=True)
+    openai_model = fields.Char(string="OpenAI Model", default="gpt-5.4-mini")
+    strava_client_id = fields.Char(string="Strava Client ID")
+    strava_client_secret = fields.Char(
+        string="New Strava Client Secret",
+        help="Paste a new secret to replace the encrypted server-side secret. The current secret is never displayed.",
+        groups="base.group_system",
+    )
+    strava_redirect_uri = fields.Char(string="Strava Redirect URI")
+    strava_status = fields.Char(readonly=True)
+
+    @api.model
+    def default_get(self, fields_list):
+        values = super().default_get(fields_list)
+        params = self.env["ir.config_parameter"].sudo()
+        values.update(
+            {
+                "openai_model": params.get_param("drift.openai_model") or "gpt-5.4-mini",
+                "openai_key_status": self._secret_status("drift.openai_api_key_encrypted", "drift.openai_api_key_last4"),
+                "strava_client_id": params.get_param("drift.strava_client_id") or "",
+                "strava_redirect_uri": params.get_param("drift.strava_redirect_uri") or "",
+                "strava_status": self._secret_status("drift.strava_client_secret_encrypted", "drift.strava_client_secret_last4"),
+            }
+        )
+        return values
+
+    def action_save(self):
+        self.ensure_one()
+        params = self.env["ir.config_parameter"].sudo()
+        params.set_param("drift.openai_model", self.openai_model or "gpt-5.4-mini")
+        params.set_param("drift.strava_client_id", self.strava_client_id or "")
+        params.set_param("drift.strava_redirect_uri", self.strava_redirect_uri or "")
+        if self.openai_api_key:
+            self._store_secret("drift.openai_api_key", self.openai_api_key)
+        if self.strava_client_secret:
+            self._store_secret("drift.strava_client_secret", self.strava_client_secret)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "DRIFT settings saved",
+                "message": "Secrets were stored encrypted server-side.",
+                "type": "success",
+                "sticky": False,
+            },
+        }
+
+    @api.model
+    def _store_secret(self, key, value):
+        params = self.env["ir.config_parameter"].sudo()
+        clean = (value or "").strip()
+        if not clean:
+            return
+        encrypted = self.env["drift.strava.account"].sudo().encrypt_token(clean)
+        params.set_param(f"{key}_encrypted", encrypted)
+        params.set_param(f"{key}_last4", clean[-4:])
+        params.set_param(f"{key}_updated_at", fields.Datetime.now())
+        params.search([("key", "=", key)]).unlink()
+
+    @api.model
+    def _secret_status(self, encrypted_key, last4_key):
+        params = self.env["ir.config_parameter"].sudo()
+        last4 = params.get_param(last4_key)
+        if params.get_param(encrypted_key):
+            return f"Configured ending in {last4}" if last4 else "Configured"
+        return "Not configured"
 
 
 class ProductTemplateDriftPayload(models.Model):
