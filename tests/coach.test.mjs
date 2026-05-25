@@ -114,6 +114,7 @@ const nativeRuntime = await readFile(new URL('../src/nativeRuntime.js', import.m
 const capacitorConfig = await readFile(new URL('../capacitor.config.ts', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
 assert.match(odooController, /\/sauna-hat/);
+assert.match(odooController, /\/drift\/shop\/add\/<int:product_template_id>/);
 assert.match(odooController, /\/download/);
 assert.match(odooController, /ios_app_store_url/);
 assert.match(odooController, /android_play_store_url/);
@@ -152,7 +153,7 @@ assert.match(odooRules, /profile_id\.partner_id/);
 assert.match(odooTemplates, /id="sauna_hat_landing"/);
 assert.match(odooTemplates, /The uniform for controlled heat/);
 assert.match(odooTemplates, /First 100 sauna sessions/);
-assert.match(odooTemplates, /\/shop\/cart\/update/);
+assert.match(odooTemplates, /\/drift\/shop\/add\/%s/);
 assert.match(odooTemplates, /website_menu_drift_sauna_hat/);
 assert.doesNotMatch(odooTemplates, /cures|heals|treats|diagnoses/i);
 assert.match(odooHooks, /\/sauna-hat/);

@@ -527,10 +527,8 @@
                         <p class="drift-sku__lead">A wool sauna hat for athletes who use heat as a deliberate end to the training day. Low-tech, visible, and made for the moment training turns into downshift.</p>
                         <div class="drift-sku__actions">
                             <t t-if="variant_id">
-                                <form class="drift-sku__form" action="/shop/cart/update" method="post">
+                                <form class="drift-sku__form" t-att-action="'/drift/shop/add/%s' % product.id" method="post">
                                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                    <input type="hidden" name="product_id" t-att-value="variant_id"/>
-                                    <input type="hidden" name="add_qty" value="1"/>
                                     <button type="submit">Add Sauna Hat</button>
                                 </form>
                             </t>

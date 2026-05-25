@@ -47,6 +47,16 @@ class DriftCoachController(http.Controller):
             },
         )
 
+    @http.route("/drift/shop/add/<int:product_template_id>", type="http", auth="public", methods=["POST"], website=True)
+    def add_product_to_cart(self, product_template_id, **kwargs):
+        product_template = request.env["product.template"].sudo().browse(product_template_id).exists()
+        product = product_template.product_variant_id if product_template else False
+        if not product or not product._is_add_to_cart_allowed():
+            return redirect("/shop", code=303)
+        order = request.cart or request.website._create_cart()
+        order.with_context(skip_cart_verification=True)._cart_add(product_id=product.id, quantity=1)
+        return redirect("/shop/cart", code=303)
+
     @http.route("/download", type="http", auth="public", website=True, sitemap=False)
     def download_redirect(self, **kwargs):
         user_agent = (request.httprequest.headers.get("User-Agent") or "").lower()
