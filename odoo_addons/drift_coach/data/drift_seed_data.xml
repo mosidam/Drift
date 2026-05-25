@@ -152,4 +152,99 @@
         <field name="duration_days">7</field>
         <field name="summary">A simple race-week rhythm for control, breath, and lower-input evenings.</field>
     </record>
+
+    <record id="program_7_day_reset_day_1" model="drift.program.day">
+        <field name="program_id" ref="program_7_day_reset"/>
+        <field name="day_index">1</field>
+        <field name="title">Set the baseline</field>
+        <field name="protocol_id" ref="protocol_nasal_reset"/>
+        <field name="action">Check in, complete Nasal Reset, and log how the first decision feels.</field>
+    </record>
+    <record id="program_7_day_reset_day_2" model="drift.program.day">
+        <field name="program_id" ref="program_7_day_reset"/>
+        <field name="day_index">2</field>
+        <field name="title">Close the easy day</field>
+        <field name="protocol_id" ref="protocol_quiet_reset"/>
+        <field name="action">Keep intensity low and finish with a quiet evening reset.</field>
+    </record>
+    <record id="program_7_day_reset_day_3" model="drift.program.day">
+        <field name="program_id" ref="program_7_day_reset"/>
+        <field name="day_index">3</field>
+        <field name="title">Add run context</field>
+        <field name="protocol_id" ref="protocol_hot_miles_prep"/>
+        <field name="action">Use Hot Miles Prep before a controlled run or manual check-in.</field>
+    </record>
+    <record id="program_7_day_reset_day_4" model="drift.program.day">
+        <field name="program_id" ref="program_7_day_reset"/>
+        <field name="day_index">4</field>
+        <field name="title">Heat or quiet rest</field>
+        <field name="protocol_id" ref="protocol_sauna_downshift"/>
+        <field name="action">Use Sauna Downshift only if heat feels controlled; otherwise use Quiet Reset.</field>
+    </record>
+
+    <record id="program_hot_miles_day_1" model="drift.program.day">
+        <field name="program_id" ref="program_hot_miles"/>
+        <field name="day_index">1</field>
+        <field name="title">Prep the first hot run</field>
+        <field name="protocol_id" ref="protocol_hot_miles_prep"/>
+        <field name="action">Start with nasal-only prep and keep the first ten minutes controlled.</field>
+    </record>
+    <record id="program_hot_miles_day_2" model="drift.program.day">
+        <field name="program_id" ref="program_hot_miles"/>
+        <field name="day_index">2</field>
+        <field name="title">Recover the signal</field>
+        <field name="protocol_id" ref="protocol_nasal_reset"/>
+        <field name="action">Use Nasal Reset after work or after the run to bring the day down.</field>
+    </record>
+    <record id="program_hot_miles_day_3" model="drift.program.day">
+        <field name="program_id" ref="program_hot_miles"/>
+        <field name="day_index">3</field>
+        <field name="title">Keep the evening clean</field>
+        <field name="protocol_id" ref="protocol_quiet_reset"/>
+        <field name="action">Avoid adding another hard input; log Quiet Reset before sleep.</field>
+    </record>
+
+    <record id="program_sauna_downshift_day_1" model="drift.program.day">
+        <field name="program_id" ref="program_sauna_downshift"/>
+        <field name="day_index">1</field>
+        <field name="title">First controlled heat</field>
+        <field name="protocol_id" ref="protocol_sauna_downshift"/>
+        <field name="action">Complete one conservative heat round and a slow cool-down.</field>
+    </record>
+    <record id="program_sauna_downshift_day_2" model="drift.program.day">
+        <field name="program_id" ref="program_sauna_downshift"/>
+        <field name="day_index">2</field>
+        <field name="title">Non-heat downshift</field>
+        <field name="protocol_id" ref="protocol_quiet_reset"/>
+        <field name="action">Use Quiet Reset so the program is not dependent on sauna access.</field>
+    </record>
+    <record id="program_sauna_downshift_day_3" model="drift.program.day">
+        <field name="program_id" ref="program_sauna_downshift"/>
+        <field name="day_index">3</field>
+        <field name="title">Breathe before heat</field>
+        <field name="protocol_id" ref="protocol_nasal_reset"/>
+        <field name="action">Complete Nasal Reset before the room or before the evening landing.</field>
+    </record>
+
+    <record id="program_race_week_reset_day_1" model="drift.program.day">
+        <field name="program_id" ref="program_race_week_reset"/>
+        <field name="day_index">1</field>
+        <field name="title">Lower the noise</field>
+        <field name="protocol_id" ref="protocol_nasal_reset"/>
+        <field name="action">Use Nasal Reset to keep the first race-week decision simple.</field>
+    </record>
+    <record id="program_race_week_reset_day_2" model="drift.program.day">
+        <field name="program_id" ref="program_race_week_reset"/>
+        <field name="day_index">2</field>
+        <field name="title">Quiet evening</field>
+        <field name="protocol_id" ref="protocol_quiet_reset"/>
+        <field name="action">Protect sleep and avoid late metric review.</field>
+    </record>
+    <record id="program_race_week_reset_day_3" model="drift.program.day">
+        <field name="program_id" ref="program_race_week_reset"/>
+        <field name="day_index">3</field>
+        <field name="title">Controlled primer</field>
+        <field name="protocol_id" ref="protocol_hot_miles_prep"/>
+        <field name="action">Use Hot Miles Prep before a short controlled shakeout.</field>
+    </record>
 </odoo>
