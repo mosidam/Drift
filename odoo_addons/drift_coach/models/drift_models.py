@@ -112,7 +112,7 @@ class DriftProfile(models.Model):
         return {
             "id": self.id,
             "mode": self.mode,
-            "display_name": self.display_name or "DRIFT Athlete",
+            "display_name": self._app_display_name(),
             "timezone": self.timezone or "UTC",
             "strava_connected": bool(strava),
             "strava_last_sync": strava.last_sync_at.isoformat() if strava and strava.last_sync_at else None,
@@ -128,7 +128,7 @@ class DriftProfile(models.Model):
                 "mode": "odoo-portal" if self.user_id else "odoo-guest-preview",
             },
             "user": {
-                "name": "DRIFT Athlete",
+                "name": self._app_display_name(),
                 "timezone": self.timezone or "UTC",
             },
             "strava": self._strava_payload(),
@@ -138,6 +138,12 @@ class DriftProfile(models.Model):
             "coachDecisions": self.coach_decision_ids.sorted("created_at", reverse=True)._app_payload(),
             "privacyEvents": self.privacy_event_ids.sorted("created_at", reverse=True)._app_payload(),
         }
+
+    def _app_display_name(self):
+        self.ensure_one()
+        if self.user_id and self.partner_id and self.partner_id.name:
+            return self.partner_id.name
+        return "DRIFT Athlete"
 
     def _strava_payload(self):
         self.ensure_one()

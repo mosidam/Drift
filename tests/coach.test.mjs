@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import {
+  applyBootstrapPayload,
   buildDeterministicDecision,
   buildPrivacySummary,
   buildSanitizedCoachContext,
@@ -89,6 +90,11 @@ assert.equal(Object.prototype.hasOwnProperty.call(fallbackDecision, 'recommended
 
 const stateWithDecision = recordCoachDecision(sensitiveState, fallbackDecision, context, 'offline');
 const privacy = buildPrivacySummary(stateWithDecision);
+const cleanedBootstrap = applyBootstrapPayload(initialCoachState, {
+  profile: { mode: 'guest', display_name: 'drift.profile,71', portal_account: false },
+  state: { checkIns: [], ritualLogs: [], activities: [] },
+});
+assert.equal(cleanedBootstrap.profile.displayName, 'DRIFT Athlete');
 assert.equal(privacy.openai_store, false);
 assert.equal(privacy.background_mode, false);
 assert.equal(privacy.data_sent_to_openai.includes('weekly_run_km'), true);

@@ -270,6 +270,8 @@ export function normalizeState(state) {
 }
 
 export function applyBootstrapPayload(currentState, payload) {
+  const displayName = cleanDisplayName(payload.profile?.display_name || payload.profile?.displayName);
+
   return normalizeState({
     ...currentState,
     ...(payload.state || {}),
@@ -277,7 +279,7 @@ export function applyBootstrapPayload(currentState, payload) {
       ...currentState.profile,
       mode: payload.profile?.mode || payload.state?.profile?.mode || currentState.profile.mode,
       portalAccount: Boolean(payload.profile?.portal_account || payload.profile?.portalAccount),
-      displayName: payload.profile?.display_name || payload.profile?.displayName || 'DRIFT Athlete',
+      displayName,
     },
     session: {
       ...(payload.state?.session || currentState.session),
@@ -289,6 +291,12 @@ export function applyBootstrapPayload(currentState, payload) {
       ...(payload.mobile || {}),
     },
   });
+}
+
+function cleanDisplayName(value) {
+  const label = String(value || '').trim();
+  if (!label || /^drift\.profile,\d+$/i.test(label)) return 'DRIFT Athlete';
+  return label;
 }
 
 export function createCheckIn(state, input) {
