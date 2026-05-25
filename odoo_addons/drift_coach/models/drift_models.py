@@ -68,9 +68,7 @@ class DriftProfile(models.Model):
     privacy_event_ids = fields.One2many("drift.privacy.event", "profile_id")
     entitlement_ids = fields.One2many("drift.entitlement", "profile_id")
 
-    _sql_constraints = [
-        ("guest_key_unique", "unique(guest_key)", "Guest key must be unique."),
-    ]
+    _guest_key_unique = models.Constraint("unique(guest_key)", "Guest key must be unique.")
 
     @api.model
     def create_guest_key(self):
@@ -166,9 +164,10 @@ class DriftStravaAccount(models.Model):
     expires_at = fields.Datetime(required=True)
     last_sync_at = fields.Datetime()
 
-    _sql_constraints = [
-        ("athlete_profile_unique", "unique(profile_id, athlete_id)", "This athlete is already connected."),
-    ]
+    _athlete_profile_unique = models.Constraint(
+        "unique(profile_id, athlete_id)",
+        "This athlete is already connected.",
+    )
 
     @api.model
     def hash_private_label(self, value):
@@ -234,9 +233,7 @@ class DriftActivity(models.Model):
         required=True,
     )
 
-    _sql_constraints = [
-        ("strava_activity_unique", "unique(strava_activity_id)", "Strava activity is already imported."),
-    ]
+    _strava_activity_unique = models.Constraint("unique(strava_activity_id)", "Strava activity is already imported.")
 
     def _app_payload(self):
         return [
@@ -356,9 +353,7 @@ class DriftProtocol(models.Model):
     product_template_id = fields.Many2one("product.template", ondelete="set null")
     step_ids = fields.One2many("drift.protocol.step", "protocol_id")
 
-    _sql_constraints = [
-        ("slug_unique", "unique(slug)", "Protocol slug must be unique."),
-    ]
+    _slug_unique = models.Constraint("unique(slug)", "Protocol slug must be unique.")
 
     def _app_payload(self):
         return [
@@ -414,9 +409,7 @@ class DriftProgram(models.Model):
     product_template_id = fields.Many2one("product.template", ondelete="set null")
     day_ids = fields.One2many("drift.program.day", "program_id")
 
-    _sql_constraints = [
-        ("program_slug_unique", "unique(slug)", "Program slug must be unique."),
-    ]
+    _program_slug_unique = models.Constraint("unique(slug)", "Program slug must be unique.")
 
     def _app_payload(self):
         return [
