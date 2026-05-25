@@ -107,10 +107,13 @@ const odooModels = await readFile(new URL('../odoo_addons/drift_coach/models/dri
 const odooManifest = await readFile(new URL('../odoo_addons/drift_coach/__manifest__.py', import.meta.url), 'utf8');
 const odooAccess = await readFile(new URL('../odoo_addons/drift_coach/security/ir.model.access.csv', import.meta.url), 'utf8');
 const odooRules = await readFile(new URL('../odoo_addons/drift_coach/security/drift_record_rules.xml', import.meta.url), 'utf8');
+const odooTemplates = await readFile(new URL('../odoo_addons/drift_coach/views/drift_templates.xml', import.meta.url), 'utf8');
+const odooHooks = await readFile(new URL('../odoo_addons/drift_coach/hooks.py', import.meta.url), 'utf8');
 const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const nativeRuntime = await readFile(new URL('../src/nativeRuntime.js', import.meta.url), 'utf8');
 const capacitorConfig = await readFile(new URL('../capacitor.config.ts', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
+assert.match(odooController, /\/sauna-hat/);
 assert.match(odooController, /\/download/);
 assert.match(odooController, /ios_app_store_url/);
 assert.match(odooController, /android_play_store_url/);
@@ -146,6 +149,13 @@ assert.match(odooAccess, /access_drift_ritual_log_portal,drift\.ritual\.log port
 assert.match(odooRules, /drift_profile_portal_own_rule/);
 assert.match(odooRules, /profile_id\.user_id/);
 assert.match(odooRules, /profile_id\.partner_id/);
+assert.match(odooTemplates, /id="sauna_hat_landing"/);
+assert.match(odooTemplates, /The uniform for controlled heat/);
+assert.match(odooTemplates, /First 100 sauna sessions/);
+assert.match(odooTemplates, /\/shop\/cart\/update/);
+assert.match(odooTemplates, /website_menu_drift_sauna_hat/);
+assert.doesNotMatch(odooTemplates, /cures|heals|treats|diagnoses/i);
+assert.match(odooHooks, /\/sauna-hat/);
 assert.match(pwaSource, /Create free account|Your free home for recovery decisions/);
 assert.match(pwaSource, /\/app\/signup\?redirect=\/app\/today/);
 assert.match(pwaSource, /programAccessStatus/);

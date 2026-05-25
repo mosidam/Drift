@@ -229,6 +229,393 @@
         </t>
     </template>
 
+    <template id="sauna_hat_landing" name="DRIFT Sauna Hat Landing">
+        <t t-call="website.layout">
+            <style>
+                .drift-sku {
+                    color: #f5f0e6;
+                    background: #050505;
+                    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    overflow-x: hidden;
+                }
+                .drift-sku a {
+                    color: inherit;
+                }
+                .drift-sku__hero {
+                    min-height: min(780px, calc(100vh - 34px));
+                    display: grid;
+                    grid-template-columns: minmax(0, .86fr) minmax(360px, .74fr);
+                    gap: clamp(22px, 4vw, 58px);
+                    align-items: stretch;
+                    padding: clamp(26px, 5vw, 68px);
+                    background:
+                        linear-gradient(90deg, rgba(5, 5, 5, .94), rgba(5, 5, 5, .68) 48%, rgba(5, 5, 5, .26)),
+                        url("/drift_coach/static/pwa/assets/drift-sauna-kit.png") center / cover no-repeat;
+                }
+                .drift-sku__copy {
+                    display: flex;
+                    min-height: 100%;
+                    flex-direction: column;
+                    justify-content: center;
+                    max-width: 760px;
+                }
+                .drift-sku__eyebrow {
+                    margin: 0 0 14px;
+                    color: #b8d5d0;
+                    font-size: 12px;
+                    font-weight: 900;
+                    letter-spacing: .15em;
+                    text-transform: uppercase;
+                }
+                .drift-sku h1 {
+                    margin: 0;
+                    max-width: 900px;
+                    color: #f5f0e6;
+                    font-size: clamp(52px, 9vw, 124px);
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    line-height: .88;
+                }
+                .drift-sku__lead {
+                    max-width: 650px;
+                    margin: 22px 0 0;
+                    color: #d9d2c1;
+                    font-size: clamp(17px, 1.8vw, 22px);
+                    line-height: 1.55;
+                }
+                .drift-sku__actions {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    align-items: center;
+                    margin-top: 28px;
+                }
+                .drift-sku__button,
+                .drift-sku__form button {
+                    min-height: 48px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0 18px;
+                    border: 1px solid #f5f0e6;
+                    border-radius: 999px;
+                    color: #050505;
+                    background: #f5f0e6;
+                    font-size: 13px;
+                    font-weight: 950;
+                    letter-spacing: .06em;
+                    text-decoration: none !important;
+                    text-transform: uppercase;
+                    white-space: nowrap;
+                }
+                .drift-sku__button--ghost {
+                    color: #f5f0e6;
+                    background: rgba(245, 240, 230, .08);
+                    border-color: rgba(245, 240, 230, .28);
+                }
+                .drift-sku__form {
+                    margin: 0;
+                }
+                .drift-sku__price {
+                    display: inline-flex;
+                    min-height: 40px;
+                    align-items: center;
+                    padding: 0 12px;
+                    border: 1px solid rgba(184, 213, 208, .28);
+                    border-radius: 999px;
+                    color: #b8d5d0;
+                    background: rgba(184, 213, 208, .08);
+                    font-size: 12px;
+                    font-weight: 900;
+                    letter-spacing: .1em;
+                    text-transform: uppercase;
+                }
+                .drift-sku__panel {
+                    align-self: end;
+                    max-width: 460px;
+                    padding: 20px;
+                    border: 1px solid rgba(245, 240, 230, .18);
+                    border-radius: 8px;
+                    background: rgba(5, 5, 5, .72);
+                    box-shadow: 0 26px 80px rgba(0, 0, 0, .36);
+                    backdrop-filter: blur(14px);
+                }
+                .drift-sku__panel p {
+                    margin: 8px 0 0;
+                    color: #d9d2c1;
+                    line-height: 1.55;
+                }
+                .drift-sku__panel strong {
+                    color: #f5f0e6;
+                    font-size: 20px;
+                    font-weight: 950;
+                }
+                .drift-sku__band,
+                .drift-sku__split,
+                .drift-sku__note {
+                    padding: clamp(36px, 6vw, 82px) clamp(18px, 5vw, 68px);
+                }
+                .drift-sku__band {
+                    background: #f5f0e6;
+                    color: #11110f;
+                }
+                .drift-sku__band h2,
+                .drift-sku__split h2 {
+                    margin: 0;
+                    max-width: 880px;
+                    font-size: clamp(34px, 5vw, 70px);
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    line-height: .95;
+                }
+                .drift-sku__grid {
+                    display: grid;
+                    grid-template-columns: repeat(3, minmax(0, 1fr));
+                    gap: 12px;
+                    margin-top: 28px;
+                }
+                .drift-sku__card {
+                    min-height: 190px;
+                    padding: 18px;
+                    border: 1px solid rgba(17, 17, 15, .12);
+                    border-radius: 8px;
+                    background: rgba(255, 255, 255, .34);
+                }
+                .drift-sku__card span {
+                    color: #426760;
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .1em;
+                    text-transform: uppercase;
+                }
+                .drift-sku__card h3 {
+                    margin: 34px 0 8px;
+                    color: #11110f;
+                    font-size: 24px;
+                    font-weight: 950;
+                    line-height: 1;
+                }
+                .drift-sku__card p {
+                    margin: 0;
+                    color: #4d4a42;
+                    line-height: 1.5;
+                }
+                .drift-sku__split {
+                    display: grid;
+                    grid-template-columns: minmax(0, .75fr) minmax(300px, .55fr);
+                    gap: clamp(24px, 5vw, 72px);
+                    align-items: center;
+                    background: #0e1110;
+                }
+                .drift-sku__split p {
+                    max-width: 640px;
+                    color: #d9d2c1;
+                    font-size: 17px;
+                    line-height: 1.6;
+                }
+                .drift-sku__ritual {
+                    display: grid;
+                    gap: 10px;
+                    padding: 18px;
+                    border: 1px solid rgba(245, 240, 230, .16);
+                    border-radius: 8px;
+                    background: rgba(245, 240, 230, .06);
+                }
+                .drift-sku__ritual div {
+                    display: grid;
+                    grid-template-columns: 42px minmax(0, 1fr);
+                    gap: 12px;
+                    align-items: start;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid rgba(245, 240, 230, .12);
+                }
+                .drift-sku__ritual div:last-child {
+                    padding-bottom: 0;
+                    border-bottom: 0;
+                }
+                .drift-sku__ritual span {
+                    color: #b8d5d0;
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .1em;
+                }
+                .drift-sku__ritual strong {
+                    display: block;
+                    color: #f5f0e6;
+                    font-size: 18px;
+                    line-height: 1.1;
+                }
+                .drift-sku__ritual p {
+                    margin: 5px 0 0;
+                    font-size: 14px;
+                }
+                .drift-sku__note {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    gap: 20px;
+                    align-items: center;
+                    color: #11110f;
+                    background: #b8d5d0;
+                }
+                .drift-sku__note h2 {
+                    margin: 0;
+                    font-size: clamp(28px, 4vw, 52px);
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    line-height: 1;
+                }
+                .drift-sku__note p {
+                    max-width: 760px;
+                    margin: 10px 0 0;
+                    color: #263b37;
+                    line-height: 1.55;
+                }
+                .drift-sku__safety {
+                    margin: 0;
+                    padding: 16px clamp(18px, 5vw, 68px) 34px;
+                    color: #a8a095;
+                    background: #050505;
+                    font-size: 13px;
+                    line-height: 1.55;
+                }
+                @media (max-width: 920px) {
+                    .drift-sku__hero,
+                    .drift-sku__split,
+                    .drift-sku__note {
+                        grid-template-columns: 1fr;
+                    }
+                    .drift-sku__hero {
+                        min-height: auto;
+                        padding-top: 72px;
+                        background-position: 58% center;
+                    }
+                    .drift-sku__grid {
+                        grid-template-columns: 1fr;
+                    }
+                    .drift-sku__panel {
+                        align-self: start;
+                    }
+                    .drift-sku__note {
+                        align-items: start;
+                    }
+                }
+                @media (max-width: 560px) {
+                    .drift-sku h1 {
+                        font-size: clamp(44px, 16vw, 66px);
+                    }
+                    .drift-sku__actions,
+                    .drift-sku__form,
+                    .drift-sku__button,
+                    .drift-sku__form button {
+                        width: 100%;
+                    }
+                    .drift-sku__button,
+                    .drift-sku__form button {
+                        white-space: normal;
+                        text-align: center;
+                    }
+                    .drift-sku__note .drift-sku__button {
+                        width: 100%;
+                    }
+                }
+            </style>
+            <main id="wrap" class="drift-sku">
+                <section class="drift-sku__hero">
+                    <div class="drift-sku__copy">
+                        <p class="drift-sku__eyebrow">DRIFT Sauna Hat</p>
+                        <h1>The uniform for controlled heat.</h1>
+                        <p class="drift-sku__lead">A wool sauna hat for athletes who use heat as a deliberate end to the training day. Low-tech, visible, and made for the moment training turns into downshift.</p>
+                        <div class="drift-sku__actions">
+                            <t t-if="variant_id">
+                                <form class="drift-sku__form" action="/shop/cart/update" method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="product_id" t-att-value="variant_id"/>
+                                    <input type="hidden" name="add_qty" value="1"/>
+                                    <button type="submit">Add Sauna Hat</button>
+                                </form>
+                            </t>
+                            <t t-else="">
+                                <a class="drift-sku__button" t-att-href="product_url">Shop Sauna Hat</a>
+                            </t>
+                            <a class="drift-sku__button drift-sku__button--ghost" t-att-href="product_url">View details</a>
+                            <span class="drift-sku__price" t-if="price_label"><t t-out="price_label"/></span>
+                        </div>
+                    </div>
+                    <aside class="drift-sku__panel">
+                        <p class="drift-sku__eyebrow">Founding batch</p>
+                        <strong>First 100 sauna sessions.</strong>
+                        <p>Wear it, log the Sauna Downshift, and help shape Batch 002. DRIFT is built from field notes, not generic recovery noise.</p>
+                    </aside>
+                </section>
+
+                <section class="drift-sku__band">
+                    <p class="drift-sku__eyebrow">Why it works</p>
+                    <h2>A clear object for a clear ritual.</h2>
+                    <div class="drift-sku__grid">
+                        <article class="drift-sku__card">
+                            <span>01 / Ritual</span>
+                            <h3>Heat has a visible uniform.</h3>
+                            <p>The hat marks the shift from output to downshift: phone away, pace lower, session intentional.</p>
+                        </article>
+                        <article class="drift-sku__card">
+                            <span>02 / Heat</span>
+                            <h3>Made for the hot room.</h3>
+                            <p>Simple wool construction, clean profile, and no loud graphic language. It belongs in the routine.</p>
+                        </article>
+                        <article class="drift-sku__card">
+                            <span>03 / System</span>
+                            <h3>Keeps the habit going.</h3>
+                            <p>Pair it with DRIFT to log heat sessions, keep streaks, and follow the Sauna Downshift program.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="drift-sku__split">
+                    <div>
+                        <p class="drift-sku__eyebrow">Sauna Downshift</p>
+                        <h2>Run hard. Breathe down. Close the day.</h2>
+                        <p>DRIFT sells the ritual, not just the wool. The hat is the anchor for a simple post-training sequence: enter heat calmly, stay intentional, cool down, and log the session when it is done.</p>
+                        <div class="drift-sku__actions">
+                            <a class="drift-sku__button" t-att-href="kit_url">Shop Downshift Kit</a>
+                            <a class="drift-sku__button drift-sku__button--ghost" href="/app/today">Open DRIFT App</a>
+                        </div>
+                    </div>
+                    <div class="drift-sku__ritual">
+                        <div>
+                            <span>01</span>
+                            <p><strong>Heat room</strong>Hat on, phone away, session starts.</p>
+                        </div>
+                        <div>
+                            <span>02</span>
+                            <p><strong>Breath anchor</strong>Keep the exit controlled and the pace easy.</p>
+                        </div>
+                        <div>
+                            <span>03</span>
+                            <p><strong>Ritual log</strong>Save the session in DRIFT and build the habit.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="drift-sku__note">
+                    <div>
+                        <p class="drift-sku__eyebrow">Field notes</p>
+                        <h2>Built for the routines athletes actually repeat.</h2>
+                        <p>Sunday sauna. Post-run heat. Quiet cooldown. The product supports the ritual, and the ritual does the work.</p>
+                    </div>
+                    <a class="drift-sku__button" href="/shop">Shop DRIFT</a>
+                </section>
+                <p class="drift-sku__safety">DRIFT is informational performance and ritual support. It is not medical advice, diagnosis, injury treatment, or a replacement for professional care. Use sauna only within your own tolerance and facility rules.</p>
+            </main>
+        </t>
+    </template>
+
+    <record id="website_menu_drift_sauna_hat" model="website.menu">
+        <field name="name">Sauna Hat</field>
+        <field name="url">/sauna-hat</field>
+        <field name="parent_id" ref="website.main_menu"/>
+        <field name="sequence">35</field>
+    </record>
+
     <record id="website_menu_drift_app" model="website.menu">
         <field name="name">App</field>
         <field name="url">/app/today</field>

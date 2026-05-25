@@ -12,17 +12,27 @@ def _enable_public_signup(env):
 
 def _ensure_website_app_entry(env):
     view = env["ir.ui.view"].sudo().search([("key", "=", "drift.header")], limit=1)
-    if not view or "/app/today" in (view.arch_db or ""):
+    if not view:
         return
 
     arch = view.arch_db or ""
-    arch = arch.replace(
-        '<a href="/goals">Goals</a>',
-        '<a href="/goals">Goals</a>\n                    <a href="/app/today">App</a>',
-    )
-    arch = arch.replace(
-        '<a class="drift-standard-link" href="/standard">Standard</a>',
-        '<a class="drift-standard-link" href="/standard">Standard</a>\n                        <a class="drift-standard-link" href="/app/today">App</a>',
-    )
+    if "/sauna-hat" not in arch:
+        arch = arch.replace(
+            '<a href="/shop">Shop</a>',
+            '<a href="/shop">Shop</a>\n                    <a href="/sauna-hat">Sauna Hat</a>',
+        )
+        arch = arch.replace(
+            '<a class="drift-standard-link" href="/shop">Shop</a>',
+            '<a class="drift-standard-link" href="/shop">Shop</a>\n                        <a class="drift-standard-link" href="/sauna-hat">Sauna Hat</a>',
+        )
+    if "/app/today" not in arch:
+        arch = arch.replace(
+            '<a href="/goals">Goals</a>',
+            '<a href="/goals">Goals</a>\n                    <a href="/app/today">App</a>',
+        )
+        arch = arch.replace(
+            '<a class="drift-standard-link" href="/standard">Standard</a>',
+            '<a class="drift-standard-link" href="/standard">Standard</a>\n                        <a class="drift-standard-link" href="/app/today">App</a>',
+        )
     if arch != view.arch_db:
         view.write({"arch_db": arch})

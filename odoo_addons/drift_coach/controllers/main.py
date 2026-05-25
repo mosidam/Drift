@@ -31,6 +31,22 @@ APP_ROUTES = {
 
 
 class DriftCoachController(http.Controller):
+    @http.route(["/sauna-hat", "/drift-sauna-hat"], type="http", auth="public", website=True, sitemap=True)
+    def sauna_hat_landing(self, **kwargs):
+        product = request.env["product.template"].sudo().search([("name", "=", "DRIFT Sauna Hat")], limit=1)
+        kit = request.env["product.template"].sudo().search([("name", "=", "Sauna Downshift Kit")], limit=1)
+        return request.render(
+            "drift_coach.sauna_hat_landing",
+            {
+                "product": product,
+                "kit": kit,
+                "product_url": self._product_url(product),
+                "kit_url": self._product_url(kit),
+                "variant_id": product.product_variant_id.id if product and product.product_variant_id else False,
+                "price_label": self._price_label(product),
+            },
+        )
+
     @http.route("/download", type="http", auth="public", website=True, sitemap=False)
     def download_redirect(self, **kwargs):
         user_agent = (request.httprequest.headers.get("User-Agent") or "").lower()
@@ -493,6 +509,20 @@ class DriftCoachController(http.Controller):
             or tools.config.get(f"drift_{key}")
             or os.environ.get(env_key)
         )
+
+    def _product_url(self, product):
+        return f"/shop/{product.id}" if product else "/shop"
+
+    def _price_label(self, product):
+        if not product:
+            return ""
+        currency = product.currency_id or request.website.currency_id
+        amount = float(product.list_price or 0.0)
+        amount_label = f"{amount:.0f}" if amount.is_integer() else f"{amount:.2f}"
+        symbol = currency.symbol or "$"
+        if currency.position == "after":
+            return f"{amount_label} {symbol}"
+        return f"{symbol}{amount_label}"
 
     def _secret_config(self, key, env_key):
         params = request.env["ir.config_parameter"].sudo()
