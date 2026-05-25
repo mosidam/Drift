@@ -3,7 +3,21 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const MODEL_FLOOR_Y = -3.84;
 const MODEL_HEIGHT = 5.72;
-const SCANNED_MODEL_URL = '/drift_coach/static/tryon/models/drift-athlete-hsr0015.glb';
+const HAT_MODEL_URL = '/drift_coach/static/tryon/models/drift-sauna-hat.glb';
+const MODEL_CONFIG = {
+  man: {
+    url: '/drift_coach/static/tryon/models/drift-model-man.glb',
+    label: 'Man / sauna shorts',
+    anchor: [0, 0.03, 0.08],
+    rotation: Math.PI - 0.08,
+  },
+  woman: {
+    url: '/drift_coach/static/tryon/models/drift-model-woman.glb',
+    label: 'Woman / towel wrap',
+    anchor: [0, 0.16, 0.07],
+    rotation: Math.PI - 0.04,
+  },
+};
 
 const PALETTE = {
   black: { hat: '#111111', trim: '#d8c1a0', label: 'Black wool' },
@@ -59,11 +73,11 @@ function createTryOn(root) {
   camera.position.set(0.12, -0.85, 12.4);
 
   const avatar = new THREE.Group();
-  avatar.rotation.y = -0.22;
+  avatar.rotation.y = MODEL_CONFIG.man.rotation;
   scene.add(avatar);
 
   const materials = createMaterials();
-  const { bodyGroup, hatAnchor, hatGroup, hatMaterial, trimMaterial, seamMaterial } = buildAvatar(avatar, materials);
+  const { bodyGroup, hatAnchor, hatGroup, hatMaterial, trimMaterial, seamMaterial, wardrobe, fallbackHatGroup } = buildAvatar(avatar, materials);
   const floor = buildEnvironment(scene);
 
   const state = {
@@ -71,11 +85,14 @@ function createTryOn(root) {
     dragging: false,
     fit: 1,
     targetRotation: avatar.rotation.y,
+    model: 'man',
     trim: 'natural',
     variant: 'classic',
   };
   window.__driftTryOnModel = 'procedural';
-  loadScannedModel(avatar, bodyGroup, hatAnchor);
+  const modelController = createModelController(avatar, bodyGroup, hatAnchor, wardrobe, state);
+  loadHatModel(hatGroup, fallbackHatGroup, materials);
+  modelController.load(state.model);
 
   const resize = () => {
     const bounds = root.getBoundingClientRect();
@@ -92,19 +109,25 @@ function createTryOn(root) {
     const palette = PALETTE[state.color] || PALETTE.black;
     const variant = VARIANTS[state.variant] || VARIANTS.classic;
     const trimColor = TRIMS[state.trim] || palette.trim;
+    const modelConfig = MODEL_CONFIG[state.model] || MODEL_CONFIG.man;
     hatMaterial.color.set(palette.hat);
     trimMaterial.color.set(trimColor);
     seamMaterial.color.set(trimColor).multiplyScalar(0.72);
     const fit = Number(state.fit);
     hatGroup.scale.set(fit * variant.brim, fit * variant.scaleY, fit * variant.brim);
     hatGroup.position.y = variant.lift;
-    stateLabel.textContent = `${palette.label} / ${variant.label}`;
+    stateLabel.textContent = `${modelConfig.label} / ${palette.label} / ${variant.label}`;
     root.dataset.color = state.color;
+    root.dataset.model = state.model;
     root.dataset.variant = state.variant;
-    window.__driftTryOnState = { ...state, model: window.__driftTryOnModel || 'procedural' };
+    window.__driftTryOnState = {
+      ...state,
+      selectedModel: state.model,
+      loadedModel: window.__driftTryOnModel || 'procedural',
+    };
   };
 
-  wireControls(root, state, applyState);
+  wireControls(root, state, applyState, modelController);
   wirePointer(renderer.domElement, state);
 
   const observer = new ResizeObserver(resize);
@@ -309,6 +332,10 @@ function buildAvatar(group, materials) {
   hatGroup.position.set(0, -0.18, 0);
   hatAnchor.add(hatGroup);
 
+  const fallbackHatGroup = new THREE.Group();
+  fallbackHatGroup.name = 'Procedural sauna hat fallback';
+  hatGroup.add(fallbackHatGroup);
+
   const hatGeometry = new THREE.LatheGeometry(
     [
       new THREE.Vector2(0, 2.21),
@@ -324,31 +351,33 @@ function buildAvatar(group, materials) {
   const hat = new THREE.Mesh(hatGeometry, materials.fabric);
   hat.castShadow = true;
   hat.receiveShadow = true;
-  hatGroup.add(hat);
+  fallbackHatGroup.add(hat);
 
   const brim = new THREE.Mesh(new THREE.TorusGeometry(0.565, 0.036, 18, 128), materials.trim);
   brim.position.y = 1.315;
   brim.rotation.x = Math.PI / 2;
   brim.castShadow = true;
-  hatGroup.add(brim);
+  fallbackHatGroup.add(brim);
 
   const innerBrim = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.014, 12, 96), materials.trim);
   innerBrim.position.y = 1.295;
   innerBrim.rotation.x = Math.PI / 2;
-  hatGroup.add(innerBrim);
+  fallbackHatGroup.add(innerBrim);
 
   const loop = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.015, 12, 48), materials.trim);
   loop.position.set(0, 2.27, 0.02);
   loop.scale.y = 1.35;
   loop.castShadow = true;
-  hatGroup.add(loop);
+  fallbackHatGroup.add(loop);
 
   for (let i = 0; i < 12; i += 1) {
     const angle = (i / 12) * Math.PI * 2;
     const seam = makeSeam(angle, materials.seam);
-    hatGroup.add(seam);
+    fallbackHatGroup.add(seam);
   }
-  addWoolFibers(hatGroup, materials.fabric.color);
+  addWoolFibers(fallbackHatGroup, materials.fabric.color);
+
+  const wardrobe = buildSaunaWardrobe(group, materials);
 
   return {
     bodyGroup,
@@ -357,31 +386,159 @@ function buildAvatar(group, materials) {
     hatMaterial: materials.fabric,
     trimMaterial: materials.trim,
     seamMaterial: materials.seam,
+    wardrobe,
+    fallbackHatGroup,
   };
 }
 
-function loadScannedModel(group, fallbackBody, hatAnchor) {
+function createModelController(group, fallbackBody, hatAnchor, wardrobe, state) {
+  const loader = new GLTFLoader();
+  const cache = new Map();
+  let activeModel = null;
+  let loadToken = 0;
+
+  const activate = (key, model) => {
+    const config = MODEL_CONFIG[key] || MODEL_CONFIG.man;
+    if (activeModel && activeModel !== model) activeModel.visible = false;
+    if (!model.parent) group.add(model);
+    model.visible = true;
+    activeModel = model;
+    fallbackBody.visible = false;
+    Object.entries(wardrobe).forEach(([wardrobeKey, wardrobeGroup]) => {
+      wardrobeGroup.visible = wardrobeKey === key;
+    });
+    hatAnchor.position.fromArray(config.anchor);
+    state.targetRotation = config.rotation;
+    window.__driftTryOnModel = `hsrd-${key}-glb`;
+    window.__driftTryOnGender = key;
+    window.__driftTryOnState = {
+      ...(window.__driftTryOnState || {}),
+      selectedModel: key,
+      loadedModel: window.__driftTryOnModel,
+      gender: key,
+    };
+  };
+
+  return {
+    load(key) {
+      const config = MODEL_CONFIG[key] || MODEL_CONFIG.man;
+      const currentToken = ++loadToken;
+      state.model = key;
+      state.targetRotation = config.rotation;
+      window.__driftTryOnModel = `loading-${key}`;
+      if (cache.has(key)) {
+        activate(key, cache.get(key));
+        return;
+      }
+      loader.load(
+        config.url,
+        (gltf) => {
+          if (currentToken !== loadToken) return;
+          const model = gltf.scene;
+          model.name = `HSRD ${key} sauna try-on model`;
+          model.rotation.x = -Math.PI / 2;
+          prepareScannedModel(model);
+          normalizeScannedModel(model, key);
+          model.visible = false;
+          cache.set(key, model);
+          activate(key, model);
+        },
+        undefined,
+        (error) => {
+          if (currentToken !== loadToken) return;
+          fallbackBody.visible = true;
+          Object.values(wardrobe).forEach((wardrobeGroup) => {
+            wardrobeGroup.visible = false;
+          });
+          window.__driftTryOnModel = 'procedural';
+          window.__driftTryOnModelError = error?.message || `Unable to load ${key} scanned model`;
+        }
+      );
+    },
+  };
+}
+
+function loadHatModel(hatGroup, fallbackHatGroup, materials) {
   const loader = new GLTFLoader();
   loader.load(
-    SCANNED_MODEL_URL,
+    HAT_MODEL_URL,
     (gltf) => {
       const model = gltf.scene;
-      model.name = 'HSRD athletic scan model';
-      model.rotation.x = -Math.PI / 2;
-      prepareScannedModel(model);
-      normalizeScannedModel(model);
-      group.add(model);
-      fallbackBody.visible = false;
-      hatAnchor.position.set(0, 0.09, 0.08);
-      window.__driftTryOnModel = 'hsrd-athlete-glb';
-      window.__driftTryOnState = { ...(window.__driftTryOnState || {}), model: window.__driftTryOnModel };
+      model.name = 'DRIFT sauna hat GLB';
+      model.position.y += 1.31;
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+          const name = child.name.toLowerCase();
+          child.material = name.includes('brim') || name.includes('trim') ? materials.trim : materials.fabric;
+          child.material.side = THREE.DoubleSide;
+        }
+        if (child.isLine || child.isLineSegments) {
+          child.material = child.name.toLowerCase().includes('fiber')
+            ? new THREE.LineBasicMaterial({ color: '#24211d', transparent: true, opacity: 0.2 })
+            : new THREE.LineBasicMaterial({ color: '#bca98b', transparent: true, opacity: 0.34 });
+        }
+      });
+      hatGroup.add(model);
+      fallbackHatGroup.visible = false;
+      window.__driftTryOnHat = 'drift-sauna-hat-glb';
     },
     undefined,
     (error) => {
-      window.__driftTryOnModel = 'procedural';
-      window.__driftTryOnModelError = error?.message || 'Unable to load scanned model';
+      fallbackHatGroup.visible = true;
+      window.__driftTryOnHat = 'procedural';
+      window.__driftTryOnHatError = error?.message || 'Unable to load sauna hat model';
     }
   );
+}
+
+function buildSaunaWardrobe(group, materials) {
+  const woman = new THREE.Group();
+  woman.name = 'Woman towel wrap overlay';
+  woman.visible = false;
+
+  const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.72, 2.18, 72, 1, true), materials.towel);
+  wrap.name = 'terry_towel_body_wrap';
+  wrap.position.set(0, -0.55, 0.02);
+  wrap.scale.z = 0.66;
+  wrap.castShadow = true;
+  wrap.receiveShadow = true;
+  woman.add(wrap);
+
+  const topRoll = new THREE.Mesh(new THREE.TorusGeometry(0.59, 0.04, 14, 96), materials.towel);
+  topRoll.name = 'towel_top_roll';
+  topRoll.position.set(0, 0.54, 0.02);
+  topRoll.rotation.x = Math.PI / 2;
+  topRoll.scale.z = 0.66;
+  woman.add(topRoll);
+
+  const frontFold = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.92, 0.028), materials.towel);
+  frontFold.name = 'towel_front_overlap';
+  frontFold.position.set(0.2, -0.55, -0.46);
+  frontFold.rotation.z = -0.035;
+  woman.add(frontFold);
+
+  for (let i = 0; i < 7; i += 1) {
+    const x = -0.34 + i * 0.11;
+    const fold = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x, 0.45, -0.475),
+        new THREE.Vector3(x + 0.03 * Math.sin(i), -1.5, -0.485),
+      ]),
+      new THREE.LineBasicMaterial({ color: '#bda988', transparent: true, opacity: 0.52 })
+    );
+    fold.name = 'towel_vertical_fold';
+    woman.add(fold);
+  }
+  group.add(woman);
+
+  const man = new THREE.Group();
+  man.name = 'Man sauna shorts overlay';
+  man.visible = false;
+  group.add(man);
+
+  return { man, woman };
 }
 
 function prepareScannedModel(model) {
@@ -403,7 +560,7 @@ function prepareScannedModel(model) {
   });
 }
 
-function normalizeScannedModel(model) {
+function normalizeScannedModel(model, key = 'model') {
   model.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(model);
   const size = box.getSize(new THREE.Vector3());
@@ -420,6 +577,7 @@ function normalizeScannedModel(model) {
   const normalizedBox = new THREE.Box3().setFromObject(model);
   const normalizedSize = normalizedBox.getSize(new THREE.Vector3());
   window.__driftTryOnModelBox = {
+    key,
     min: normalizedBox.min.toArray(),
     max: normalizedBox.max.toArray(),
     size: normalizedSize.toArray(),
@@ -525,7 +683,15 @@ function makeNoiseTexture(baseColor, fleckColor, size, alpha) {
   return texture;
 }
 
-function wireControls(root, state, applyState) {
+function wireControls(root, state, applyState, modelController) {
+  root.querySelectorAll('[data-model]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.model = button.dataset.model;
+      root.querySelectorAll('[data-model]').forEach((item) => item.classList.toggle('is-active', item === button));
+      modelController.load(state.model);
+      applyState();
+    });
+  });
   root.querySelectorAll('[data-color]').forEach((button) => {
     button.addEventListener('click', () => {
       state.color = button.dataset.color;
