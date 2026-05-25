@@ -623,6 +623,7 @@ export function buildPrivacySummary(state) {
   return {
     mode: 'Minimized Context',
     openai_store: false,
+    openai_configured: false,
     background_mode: false,
     data_sent_to_openai: sanitizedFieldList,
     data_not_sent_to_openai: notSentList,

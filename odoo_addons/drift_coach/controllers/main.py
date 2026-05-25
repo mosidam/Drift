@@ -141,9 +141,7 @@ class DriftCoachController(http.Controller):
         client_id = self._config("strava_client_id", "STRAVA_CLIENT_ID")
         redirect_uri = self._config("strava_redirect_uri", "STRAVA_REDIRECT_URI") or request.httprequest.host_url.rstrip("/") + "/drift/strava/callback"
         if not client_id:
-            profile, _guest_key = self._current_profile()
-            self._connect_demo_strava(profile)
-            return request.make_json_response({"mode": "demo", "state": profile._state_payload()})
+            return redirect("/app/profile?strava=missing_config", code=302)
 
         params = urllib.parse.urlencode(
             {
@@ -168,7 +166,7 @@ class DriftCoachController(http.Controller):
         account_model = request.env["drift.strava.account"].sudo()
         athlete = token_payload.get("athlete") or {}
         account_model.search([("profile_id", "=", profile.id)]).unlink()
-        account_model.create(
+        account = account_model.create(
             {
                 "profile_id": profile.id,
                 "athlete_id": str(athlete.get("id")),
@@ -180,6 +178,7 @@ class DriftCoachController(http.Controller):
                 "last_sync_at": fields.Datetime.now(),
             }
         )
+        self._sync_recent_strava_activities(profile, account)
         return redirect("/app/today?strava=connected", code=302)
 
     @http.route("/drift/strava/webhook", type="http", auth="public", methods=["GET", "POST"], csrf=False)
@@ -287,6 +286,40 @@ class DriftCoachController(http.Controller):
                 },
             ]
         )
+
+    def _sync_recent_strava_activities(self, profile, account):
+        token = request.env["drift.strava.account"].sudo().decrypt_token(account.encrypted_access_token)
+        req = urllib.request.Request(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=30",
+            headers={"Authorization": f"Bearer {token}"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=18) as response:
+            activities = json.loads(response.read().decode("utf-8"))
+
+        activity_model = request.env["drift.activity"].sudo()
+        for item in activities:
+            sport = item.get("sport_type") or item.get("type") or "Other"
+            if sport not in {"Run", "TrailRun", "Ride"}:
+                sport = "Other"
+            strava_id = str(item.get("id"))
+            values = {
+                "profile_id": profile.id,
+                "strava_activity_id": strava_id,
+                "sport": sport,
+                "started_at": fields.Datetime.to_datetime(item.get("start_date")),
+                "distance_km": round(float(item.get("distance") or 0) / 1000, 2),
+                "moving_minutes": round(float(item.get("moving_time") or 0) / 60),
+                "elevation_m": round(float(item.get("total_elevation_gain") or 0)),
+                "relative_effort": int(item.get("suffer_score") or item.get("relative_effort") or 0),
+                "privacy_state": "private" if item.get("private") else "unknown",
+            }
+            existing = activity_model.search([("strava_activity_id", "=", strava_id)], limit=1)
+            if existing:
+                existing.write(values)
+            else:
+                activity_model.create(values)
+        account.write({"last_sync_at": fields.Datetime.now()})
 
     def _exchange_strava_code(self, code):
         redirect_uri = self._config("strava_redirect_uri", "STRAVA_REDIRECT_URI") or request.httprequest.host_url.rstrip("/") + "/drift/strava/callback"

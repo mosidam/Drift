@@ -15,6 +15,7 @@
         "views/drift_templates.xml",
     ],
     "assets": {},
+    "post_init_hook": "post_init_hook",
     "application": True,
     "installable": True,
 }

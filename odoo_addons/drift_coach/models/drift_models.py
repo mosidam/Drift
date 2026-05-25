@@ -92,6 +92,7 @@ class DriftProfile(models.Model):
 
     def action_build_bootstrap(self):
         self.ensure_one()
+        self.env["product.template"].sudo()._drift_autolink_catalog()
         decision_service = self.env["drift.coach.decision"].sudo()
         plan = decision_service.build_today_plan(self)
         return {
@@ -832,9 +833,15 @@ class DriftPrivacyEvent(models.Model):
     @api.model
     def summary_for_profile(self, profile):
         last = self.search([("profile_id", "=", profile.id)], limit=1)
+        openai_configured = bool(
+            self.env["ir.config_parameter"].sudo().get_param("drift.openai_api_key")
+            or tools.config.get("drift_openai_api_key")
+            or os.environ.get("OPENAI_API_KEY")
+        )
         return {
             "mode": "Minimized Context",
             "openai_store": False,
+            "openai_configured": openai_configured,
             "background_mode": False,
             "data_sent_to_openai": SENT_FIELDS,
             "data_not_sent_to_openai": NOT_SENT_FIELDS,
