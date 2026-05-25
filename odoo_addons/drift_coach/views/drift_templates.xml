@@ -330,6 +330,10 @@
                     letter-spacing: .1em;
                     text-transform: uppercase;
                 }
+                .drift-sku__tryon-link {
+                    border-color: rgba(184, 213, 208, .42);
+                    color: #b8d5d0;
+                }
                 .drift-sku__panel {
                     align-self: end;
                     max-width: 460px;
@@ -354,6 +358,155 @@
                 .drift-sku__split,
                 .drift-sku__note {
                     padding: clamp(36px, 6vw, 82px) clamp(18px, 5vw, 68px);
+                }
+                .drift-tryon {
+                    position: relative;
+                    min-height: min(900px, 92vh);
+                    display: grid;
+                    grid-template-columns: minmax(0, .72fr) minmax(320px, .42fr);
+                    gap: clamp(22px, 5vw, 74px);
+                    align-items: end;
+                    padding: clamp(42px, 7vw, 92px) clamp(18px, 5vw, 68px);
+                    overflow: hidden;
+                    isolation: isolate;
+                    background:
+                        radial-gradient(circle at 58% 28%, rgba(216, 116, 53, .34), transparent 26%),
+                        radial-gradient(circle at 70% 78%, rgba(184, 213, 208, .18), transparent 26%),
+                        linear-gradient(135deg, #050505, #10120f 58%, #050505);
+                }
+                .drift-tryon__canvas {
+                    position: absolute;
+                    inset: 0;
+                    z-index: -1;
+                }
+                .drift-tryon__canvas canvas {
+                    width: 100% !important;
+                    height: 100% !important;
+                    display: block;
+                    cursor: grab;
+                    touch-action: none;
+                }
+                .drift-tryon__canvas canvas:active {
+                    cursor: grabbing;
+                }
+                .drift-tryon::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    z-index: -1;
+                    pointer-events: none;
+                    background:
+                        linear-gradient(90deg, rgba(5, 5, 5, .8), transparent 42%, rgba(5, 5, 5, .56)),
+                        linear-gradient(0deg, rgba(5, 5, 5, .82), transparent 28%, rgba(5, 5, 5, .22));
+                }
+                .drift-tryon__copy {
+                    max-width: 610px;
+                    align-self: end;
+                }
+                .drift-tryon__copy h2 {
+                    margin: 0;
+                    color: #f5f0e6;
+                    font-size: clamp(38px, 6vw, 86px);
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    line-height: .92;
+                }
+                .drift-tryon__copy p:not(.drift-sku__eyebrow) {
+                    max-width: 560px;
+                    margin: 16px 0 0;
+                    color: #d9d2c1;
+                    font-size: 17px;
+                    line-height: 1.6;
+                }
+                .drift-tryon__controls {
+                    align-self: end;
+                    justify-self: end;
+                    width: min(420px, 100%);
+                    display: grid;
+                    gap: 18px;
+                    padding: 6px 0 0;
+                }
+                .drift-tryon__state {
+                    min-height: 38px;
+                    display: inline-flex;
+                    align-items: center;
+                    width: fit-content;
+                    padding: 0 12px;
+                    border: 1px solid rgba(184, 213, 208, .3);
+                    border-radius: 999px;
+                    color: #b8d5d0;
+                    background: rgba(5, 5, 5, .44);
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .08em;
+                    text-transform: uppercase;
+                }
+                .drift-tryon__group {
+                    display: grid;
+                    gap: 10px;
+                    padding-top: 16px;
+                    border-top: 1px solid rgba(245, 240, 230, .16);
+                }
+                .drift-tryon__label {
+                    color: #d9d2c1;
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .12em;
+                    text-transform: uppercase;
+                }
+                .drift-tryon__swatches,
+                .drift-tryon__segments {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+                .drift-tryon__swatch {
+                    width: 46px;
+                    height: 46px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0;
+                    border: 1px solid rgba(245, 240, 230, .26);
+                    border-radius: 999px;
+                    background: rgba(245, 240, 230, .08);
+                }
+                .drift-tryon__swatch span {
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 999px;
+                    border: 1px solid rgba(245, 240, 230, .28);
+                }
+                .drift-tryon__swatch.is-active,
+                .drift-tryon__segment.is-active {
+                    border-color: #b8d5d0;
+                    box-shadow: 0 0 0 2px rgba(184, 213, 208, .18);
+                }
+                .drift-tryon__segment {
+                    min-height: 42px;
+                    padding: 0 12px;
+                    border: 1px solid rgba(245, 240, 230, .22);
+                    border-radius: 999px;
+                    color: #f5f0e6;
+                    background: rgba(245, 240, 230, .08);
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .06em;
+                    text-transform: uppercase;
+                }
+                .drift-tryon__range {
+                    accent-color: #b8d5d0;
+                    width: 100%;
+                }
+                .drift-tryon__fallback {
+                    margin: 0;
+                    padding: 10px 12px;
+                    border: 1px solid rgba(184, 213, 208, .28);
+                    border-radius: 8px;
+                    color: #b8d5d0;
+                    background: rgba(184, 213, 208, .08);
+                    font-size: 14px;
+                    line-height: 1.45;
                 }
                 .drift-sku__band {
                     background: #f5f0e6;
@@ -571,6 +724,24 @@
                     .drift-sku__note {
                         grid-template-columns: 1fr;
                     }
+                    .drift-tryon {
+                        min-height: 940px;
+                        grid-template-columns: 1fr;
+                        align-items: end;
+                        background-position: center;
+                    }
+                    .drift-tryon::after {
+                        background:
+                            linear-gradient(0deg, rgba(5, 5, 5, .9), rgba(5, 5, 5, .12) 52%, rgba(5, 5, 5, .72));
+                    }
+                    .drift-tryon__copy {
+                        align-self: start;
+                        max-width: 560px;
+                    }
+                    .drift-tryon__controls {
+                        justify-self: stretch;
+                        width: 100%;
+                    }
                     .drift-sku__hero {
                         min-height: auto;
                         padding-top: 72px;
@@ -622,6 +793,7 @@
                             <t t-else="">
                                 <a class="drift-sku__button" t-att-href="product_url">Shop Sauna Hat</a>
                             </t>
+                            <a class="drift-sku__button drift-sku__button--ghost drift-sku__tryon-link" href="#try-on">Try in 3D</a>
                             <a class="drift-sku__button drift-sku__button--ghost" t-att-href="product_url">View details</a>
                             <span class="drift-sku__price" t-if="price_label"><t t-out="price_label"/></span>
                         </div>
@@ -631,6 +803,55 @@
                         <strong>First 100 sauna sessions.</strong>
                         <p>Wear it, log the Sauna Downshift, and help shape Batch 002. DRIFT is built from field notes, not generic recovery noise.</p>
                     </aside>
+                </section>
+
+                <section id="try-on" class="drift-tryon" data-drift-tryon="1">
+                    <div class="drift-tryon__canvas" data-tryon-canvas="1"></div>
+                    <div class="drift-tryon__copy">
+                        <p class="drift-sku__eyebrow">3D Try-on</p>
+                        <h2>Shape the hat before the hot room.</h2>
+                        <p>Preview the founding sauna hat on a simple athlete avatar, explore Batch 002 colors, and tune the fit direction before you join the field notes.</p>
+                    </div>
+                    <div class="drift-tryon__controls" aria-label="Sauna hat customization controls">
+                        <span class="drift-tryon__state" data-tryon-state="1">Black wool / Classic bell</span>
+                        <div class="drift-tryon__group">
+                            <span class="drift-tryon__label">Wool color</span>
+                            <div class="drift-tryon__swatches">
+                                <button class="drift-tryon__swatch is-active" type="button" data-color="black" aria-label="Black wool"><span style="background:#111111"></span></button>
+                                <button class="drift-tryon__swatch" type="button" data-color="oat" aria-label="Oat wool"><span style="background:#d8c8a4"></span></button>
+                                <button class="drift-tryon__swatch" type="button" data-color="moss" aria-label="Moss wool"><span style="background:#344339"></span></button>
+                                <button class="drift-tryon__swatch" type="button" data-color="clay" aria-label="Clay wool"><span style="background:#9b4f36"></span></button>
+                            </div>
+                        </div>
+                        <div class="drift-tryon__group">
+                            <span class="drift-tryon__label">Shape</span>
+                            <div class="drift-tryon__segments">
+                                <button class="drift-tryon__segment is-active" type="button" data-variant="classic">Classic</button>
+                                <button class="drift-tryon__segment" type="button" data-variant="tall">Tall</button>
+                                <button class="drift-tryon__segment" type="button" data-variant="low">Low</button>
+                            </div>
+                        </div>
+                        <div class="drift-tryon__group">
+                            <span class="drift-tryon__label">Trim</span>
+                            <div class="drift-tryon__swatches">
+                                <button class="drift-tryon__swatch is-active" type="button" data-trim="natural" aria-label="Natural trim"><span style="background:#d8c1a0"></span></button>
+                                <button class="drift-tryon__swatch" type="button" data-trim="black" aria-label="Black trim"><span style="background:#111111"></span></button>
+                                <button class="drift-tryon__swatch" type="button" data-trim="ice" aria-label="Ice trim"><span style="background:#b8d5d0"></span></button>
+                            </div>
+                        </div>
+                        <label class="drift-tryon__group">
+                            <span class="drift-tryon__label">Fit</span>
+                            <input class="drift-tryon__range" data-fit="1" type="range" min="0.92" max="1.08" step="0.01" value="1"/>
+                        </label>
+                        <div class="drift-sku__actions">
+                            <form class="drift-sku__form" t-att-action="'/drift/shop/add/%s' % product.id" method="post" t-if="variant_id">
+                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                <button type="submit">Add Sauna Hat</button>
+                            </form>
+                            <a class="drift-sku__button drift-sku__button--ghost" href="#field-list">Join color vote</a>
+                        </div>
+                        <p class="drift-tryon__fallback" data-tryon-fallback="1" hidden="hidden">3D preview is unavailable on this device. The Sauna Hat and Field List are still ready below.</p>
+                    </div>
                 </section>
 
                 <section class="drift-sku__band">
@@ -731,6 +952,7 @@
                 </section>
                 <p class="drift-sku__safety">DRIFT is informational performance and ritual support. It is not medical advice, diagnosis, injury treatment, or a replacement for professional care. Use sauna only within your own tolerance and facility rules.</p>
             </main>
+            <script type="module" src="/drift_coach/static/tryon/sauna-hat-try-on.js"></script>
         </t>
     </template>
 
