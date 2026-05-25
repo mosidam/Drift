@@ -6,7 +6,7 @@
     "author": "DRIFT",
     "website": "https://olivierstrails.com",
     "license": "LGPL-3",
-    "depends": ["website", "website_sale", "portal"],
+    "depends": ["website", "website_sale", "portal", "auth_signup"],
     "data": [
         "security/ir.model.access.csv",
         "data/drift_seed_data.xml",

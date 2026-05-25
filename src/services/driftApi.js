@@ -249,9 +249,9 @@ const seedCheckIn = {
 
 export const initialCoachState = {
   session: {
-    id: 'local-demo-session',
+    id: 'local-preview-session',
     authReady: true,
-    mode: 'local-demo',
+    mode: 'local-preview',
     csrfToken: null,
   },
   profile: {
@@ -349,7 +349,7 @@ export function applyBootstrapPayload(currentState, payload) {
   });
 }
 
-export function connectDemoStrava(state) {
+export function connectPreviewStrava(state) {
   return normalizeState({
     ...state,
     strava: {
@@ -357,7 +357,7 @@ export function connectDemoStrava(state) {
       connected: true,
       athleteName: 'Connected athlete',
       lastSync: new Date().toISOString(),
-      mode: 'demo-oauth',
+      mode: 'preview-oauth',
     },
     activities: seedActivities,
   });

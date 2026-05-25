@@ -158,9 +158,10 @@ class DriftCoachController(http.Controller):
     def strava_callback(self, **kwargs):
         profile, _guest_key = self._current_profile()
         code = kwargs.get("code")
-        if not code or not self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"):
-            self._connect_demo_strava(profile)
-            return redirect("/app/today?strava=demo", code=302)
+        if not code:
+            return redirect("/app/profile?strava=missing_code", code=302)
+        if not self._config("strava_client_id", "STRAVA_CLIENT_ID") or not self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"):
+            return redirect("/app/profile?strava=missing_config", code=302)
 
         token_payload = self._exchange_strava_code(code)
         account_model = request.env["drift.strava.account"].sudo()
@@ -256,36 +257,6 @@ class DriftCoachController(http.Controller):
         else:
             content_type = "application/javascript"
         return request.make_response(content, headers=[("Content-Type", content_type)])
-
-    def _connect_demo_strava(self, profile):
-        activity_model = request.env["drift.activity"].sudo()
-        activity_model.search([("profile_id", "=", profile.id), ("strava_activity_id", "in", [f"demo-{profile.id}-1", f"demo-{profile.id}-2"])]).unlink()
-        activity_model.create(
-            [
-                {
-                    "profile_id": profile.id,
-                    "strava_activity_id": f"demo-{profile.id}-1",
-                    "sport": "Run",
-                    "started_at": fields.Datetime.now(),
-                    "distance_km": 8.4,
-                    "moving_minutes": 43,
-                    "elevation_m": 92,
-                    "relative_effort": 62,
-                    "privacy_state": "unknown",
-                },
-                {
-                    "profile_id": profile.id,
-                    "strava_activity_id": f"demo-{profile.id}-2",
-                    "sport": "TrailRun",
-                    "started_at": fields.Datetime.now(),
-                    "distance_km": 17.8,
-                    "moving_minutes": 112,
-                    "elevation_m": 420,
-                    "relative_effort": 128,
-                    "privacy_state": "unknown",
-                },
-            ]
-        )
 
     def _sync_recent_strava_activities(self, profile, account):
         token = request.env["drift.strava.account"].sudo().decrypt_token(account.encrypted_access_token)

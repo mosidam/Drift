@@ -328,8 +328,10 @@ p {
 .protocol-card,
 .program-card,
 .safety-notice,
+.success-notice,
 .checkin-panel,
-.plan-pill {
+.plan-pill,
+.account-callout {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(17, 17, 15, 0.82);
@@ -466,6 +468,51 @@ p {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(17, 17, 15, 0.82);
+}
+
+.account-callout {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  background:
+    linear-gradient(135deg, rgba(124, 169, 130, 0.16), transparent 44%),
+    rgba(17, 17, 15, 0.86);
+}
+
+.account-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  border: 1px solid rgba(124, 169, 130, 0.28);
+  border-radius: 999px;
+  background: rgba(124, 169, 130, 0.12);
+}
+
+.account-callout h2,
+.account-card h3 {
+  margin: 0;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: clamp(1.9rem, 4vw, 3.1rem);
+  font-weight: 900;
+  line-height: 0.96;
+}
+
+.account-callout p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 10px 0 0;
+  color: var(--bone);
+  line-height: 1.58;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .how-grid article {
@@ -682,9 +729,29 @@ p {
   padding: 16px;
 }
 
+.success-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  color: var(--text);
+  background: rgba(124, 169, 130, 0.12);
+  border-color: rgba(124, 169, 130, 0.32);
+}
+
 .safety-notice p {
   margin: 0;
   font-size: 0.9rem;
+}
+
+.success-notice svg {
+  color: var(--green);
+}
+
+.success-notice p {
+  margin: 0;
+  color: var(--text);
+  font-weight: 800;
 }
 
 .quick-log {
@@ -1121,6 +1188,7 @@ p {
   .program-grid,
   .decision-grid,
   .how-grid,
+  .account-callout,
   .adjust-grid,
   .privacy-panel,
   .coach-decision-panel,
@@ -1252,7 +1320,8 @@ p {
   }
 
   .hero-actions,
-  .button-row {
+  .button-row,
+  .account-actions {
     display: grid;
   }
 

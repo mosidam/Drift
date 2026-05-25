@@ -9,18 +9,19 @@ import {
   CircleAlert,
   Flame,
   Gauge,
-  History,
   Home,
+  LogIn,
   Lock,
   Moon,
   Plus,
   RefreshCw,
   Route as RouteIcon,
-  Settings,
   ShieldCheck,
   Smartphone,
   Timer,
   TrendingUp,
+  UserPlus,
+  UserRound,
   Waves,
   Wind,
   Zap,
@@ -36,11 +37,9 @@ import {
   buildTodayPlan,
   commerceProducts,
   combinedTimeline,
-  connectDemoStrava,
   createCheckIn,
   createRitualLog,
   decisionLabels,
-  enableWriteScope,
   loadCoachState,
   markRitualExported,
   normalizeState,
@@ -53,6 +52,8 @@ import {
 const API_BASE = import.meta.env.VITE_DRIFT_API_BASE || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 const appPath = (path = '') => `/app${path}`;
 const assetUrl = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+const loginUrl = '/web/login?redirect=/app/today';
+const signupUrl = '/web/signup?redirect=/app/today';
 
 const assets = {
   runner: assetUrl('/assets/drift-hero-runner.png'),
@@ -65,7 +66,7 @@ const navItems = [
   ['Coach', appPath('/coach'), Brain],
   ['Library', appPath('/library'), Waves],
   ['Programs', appPath('/programs'), CalendarDays],
-  ['Profile', appPath('/profile'), Settings],
+  ['Account', appPath('/profile'), UserRound],
 ];
 
 const quickRituals = [
@@ -194,7 +195,7 @@ function App() {
           <Route path="/app/programs" element={<ProgramsPage programs={catalog.programs} protocols={catalog.protocols} />} />
           <Route
             path="/app/profile"
-            element={<SettingsPage state={state} privacy={privacy} updateState={updateState} />}
+            element={<SettingsPage state={state} />}
           />
           <Route path="/app/privacy" element={<PrivacyPage privacy={privacy} />} />
           <Route path="/app/strava/callback" element={<StravaCallback updateState={updateState} />} />
@@ -209,14 +210,16 @@ function App() {
 
 function AppHeader({ state, status }) {
   const label = state.strava.connected
-    ? 'Strava live'
+    ? 'Strava connected'
+    : state.profile?.portalAccount
+      ? 'Account saved'
     : status.api === 'live' && state.profile?.mode === 'guest'
-      ? 'Guest preview'
+      ? 'Free preview'
       : status.api === 'live'
-        ? 'Manual mode'
+        ? 'Ready'
         : status.api === 'error'
-          ? 'Sync issue'
-          : 'Local preview';
+          ? 'Saving paused'
+          : 'Preview';
 
   return (
     <header className="app-header">
@@ -256,6 +259,7 @@ function BottomNav() {
 function TodayPage({ state, plan, status, postState, products }) {
   const context = buildSanitizedCoachContext(state);
   const hasStrava = state.strava.connected && state.activities.length > 0;
+  const hasAccount = Boolean(state.profile?.portalAccount);
   const decisionLabel = decisionLabels[plan.decision];
 
   const generateDecision = () =>
@@ -276,7 +280,7 @@ function TodayPage({ state, plan, status, postState, products }) {
         <div className="hero-copy">
           <p className="eyebrow">Recovery OS for Strava athletes</p>
           <h1>{decisionLabel}: your next best recovery decision.</h1>
-          <p>Strava shows the effort. DRIFT turns it into a Run / Breathe / Rest plan for today.</p>
+          <p>Strava shows the workout. DRIFT helps you close the day with the right Run / Breathe / Rest ritual.</p>
           <div className="hero-actions">
             <button className="button primary" type="button" onClick={generateDecision}>
               <Brain size={17} /> Get today’s decision
@@ -290,6 +294,8 @@ function TodayPage({ state, plan, status, postState, products }) {
 
       <HowItWorks connected={hasStrava} />
 
+      {!hasAccount && <AccountPrompt />}
+
       {!hasStrava && <EmptyStravaState />}
 
       <section className="decision-band">
@@ -301,8 +307,8 @@ function TodayPage({ state, plan, status, postState, products }) {
 
       <section className="section-block">
         <div className="section-title">
-          <p className="eyebrow">{status.coach === 'openai' ? 'OpenAI structured decision' : 'Rules engine active'}</p>
-          <h2>Today’s recovery operating plan.</h2>
+          <p className="eyebrow">{status.coach === 'openai' ? 'Personalized daily plan' : 'Daily plan'}</p>
+          <h2>Today’s Run / Breathe / Rest plan.</h2>
         </div>
         <div className="decision-grid">
           <DecisionCard icon={RouteIcon} label="Run Context" title={decisionLabel} copy={plan.run_adjustment} />
@@ -317,7 +323,7 @@ function TodayPage({ state, plan, status, postState, products }) {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Run Context</p>
-              <h3>{hasStrava ? 'Imported from Strava' : 'Waiting for Strava'}</h3>
+              <h3>{hasStrava ? 'Strava is shaping today' : 'Manual check-in is enough to start'}</h3>
             </div>
             <RefreshCw size={18} />
           </div>
@@ -327,8 +333,8 @@ function TodayPage({ state, plan, status, postState, products }) {
             <span>{context.last_run_type}</span>
           </div>
           <p>
-            DRIFT never needs route names or raw Strava payloads for the daily decision. It uses aggregate load and
-            timing only.
+            DRIFT uses weekly load, last-run timing, and your check-in. Route details and private activity names stay out
+            of the coaching plan.
           </p>
         </div>
         <div className="panel product-panel">
@@ -336,7 +342,7 @@ function TodayPage({ state, plan, status, postState, products }) {
           <div>
             <p className="eyebrow">Contextual Tool</p>
             <h3>{recommendedProduct?.name || plan.commerce_hint}</h3>
-            <p>One product hint per day, always secondary to the recovery decision.</p>
+            <p>One useful gear match for the day, always secondary to the ritual.</p>
             {recommendedProduct?.url && (
               <a className="button ghost" href={recommendedProduct.url}>
                 <ArrowRight size={17} /> View in shop
@@ -354,23 +360,38 @@ function TodayPage({ state, plan, status, postState, products }) {
 
 function LogPage({ state, plan, postState }) {
   const latestCheckIn = state.checkIns[0];
+  const [savedNotice, setSavedNotice] = useState(null);
+
+  const saveCheckIn = async (input) => {
+    await postState(apiRoutes.checkIn, input, (current) => {
+      const withCheckIn = createCheckIn(current, input);
+      const context = buildSanitizedCoachContext(withCheckIn);
+      return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
+    });
+    setSavedNotice('Check-in saved. Your next decision will use it.');
+  };
+
+  const logRitual = async (ritual) => {
+    await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
+    setSavedNotice(`${ritual.title} logged. Streak updated.`);
+  };
 
   return (
     <div className="screen">
       <PageIntro
         eyebrow="Check body state"
         title="Tell DRIFT what Strava cannot see."
-        copy="Energy, soreness, stress, and sleep quality sharpen the daily decision. Notes stay in DRIFT and are not sent to OpenAI."
+        copy="Energy, soreness, stress, and sleep quality tune the daily plan. Private notes stay in your DRIFT account."
       />
+      {savedNotice && (
+        <section className="success-notice" role="status">
+          <Check size={20} />
+          <p>{savedNotice}</p>
+        </section>
+      )}
       <CheckInForm
         initial={latestCheckIn}
-        onSubmit={(input) =>
-          postState(apiRoutes.checkIn, input, (current) => {
-            const withCheckIn = createCheckIn(current, input);
-            const context = buildSanitizedCoachContext(withCheckIn);
-            return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
-          })
-        }
+        onSubmit={saveCheckIn}
       />
 
       <section className="section-block">
@@ -383,7 +404,7 @@ function LogPage({ state, plan, postState }) {
             <RitualCard
               key={ritual.title}
               ritual={ritual}
-              onLog={() => postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual))}
+              onLog={() => logRitual(ritual)}
             />
           ))}
         </div>
@@ -424,8 +445,8 @@ function CoachPage({ state, plan, privacy, postState }) {
     <div className="screen coach-screen">
       <PageIntro
         eyebrow="Plan Explainer"
-        title="No open-ended chat. Just useful adjustments."
-        copy="DRIFT uses a structured decision engine. You can ask for the plan to be explained or adjusted without sending private free-text prompts."
+        title="Adjust the day without starting a chat."
+        copy="Tap what changed and DRIFT reshapes the plan into a clearer, easier recovery decision."
       />
       <section className="coach-decision-panel">
         <div>
@@ -436,7 +457,7 @@ function CoachPage({ state, plan, privacy, postState }) {
         <div className="confidence-card">
           <span>Confidence</span>
           <strong>{plan.confidence}</strong>
-          <small>{plan.source === 'openai' ? 'Structured OpenAI output' : 'Rules engine fallback'}</small>
+          <small>{plan.source === 'openai' ? 'Personalized plan' : 'Standard plan'}</small>
         </div>
       </section>
       <section className="adjust-grid" aria-label="Plan adjustment actions">
@@ -455,14 +476,14 @@ function CoachPage({ state, plan, privacy, postState }) {
       </section>
       <section className="privacy-panel">
         <div>
-          <p className="eyebrow">Privacy Summary</p>
-          <h3>Minimized context only.</h3>
-          <p>{privacy.explanation}</p>
+          <p className="eyebrow">Private by default</p>
+          <h3>Only recovery context is used.</h3>
+          <p>DRIFT uses training load, check-in scores, and ritual history to explain the plan. Private notes and route details stay out.</p>
         </div>
         <div className="privacy-list">
-          <span>Sent: {privacy.data_sent_to_openai.length} aggregate fields</span>
-          <span>Not sent: route names, notes, identity, tokens</span>
-          <span>OpenAI store: {String(privacy.openai_store)}</span>
+          <span>Run load</span>
+          <span>Body check-in</span>
+          <span>Ritual streaks</span>
         </div>
       </section>
     </div>
@@ -512,7 +533,7 @@ function HistoryPage({ state, timeline, postState }) {
                 <button
                   className="mini-button"
                   disabled={!state.strava.writeScope || item.source.includes('Strava')}
-                  onClick={() => postState(apiRoutes.stravaExportRitual, { ritualId: item.id }, (current) => markRitualExported(enableWriteScope(current), item.id))}
+                  onClick={() => postState(apiRoutes.stravaExportRitual, { ritualId: item.id }, (current) => markRitualExported(current, item.id))}
                 >
                   {item.source.includes('Strava') ? 'Exported' : state.strava.writeScope ? 'Export' : 'Private'}
                 </button>
@@ -578,7 +599,7 @@ function ProgramsPage({ programs: programCatalog, protocols: protocolCatalog }) 
                 <Timer size={15} /> {program.durationDays} days
               </span>
               <span>
-                <Lock size={15} /> Purchase unlock-ready
+                <Lock size={15} /> Linked kit unlocks full path
               </span>
             </div>
             <div className="program-strip">
@@ -685,68 +706,52 @@ function GuidedProtocolCard({ protocol, products }) {
   );
 }
 
-function SettingsPage({ state, privacy, updateState }) {
+function SettingsPage({ state }) {
   const oauthUrl = buildStravaOAuthUrl();
   const params = new URLSearchParams(window.location.search);
   const stravaMissingConfig = params.get('strava') === 'missing_config';
 
-  const connect = async () => {
-    try {
-      const payload = import.meta.env.DEV ? await apiRequest(apiRoutes.stravaConnect) : null;
-      if (!payload) throw new Error('Redirect to server-side Strava OAuth');
-      updateState(payload.state);
-    } catch {
-      if (oauthUrl && !import.meta.env.DEV) {
-        window.location.href = `${API_BASE}${oauthUrl}`;
-      } else {
-        updateState((current) => connectDemoStrava(current));
-      }
-    }
+  const connect = () => {
+    if (oauthUrl) window.location.href = `${API_BASE}${oauthUrl}`;
   };
 
   return (
     <div className="screen">
       <PageIntro
-        eyebrow="Settings"
-        title="Connect Strava. Keep rituals private."
-        copy="Recovery OS for athletes who already track runs in Strava. DRIFT adds the missing recovery decision layer."
+        eyebrow="Account"
+        title="Save your recovery rhythm."
+        copy="Create a free DRIFT account to keep history, connect Strava, and carry your programs across devices."
       />
       {stravaMissingConfig && (
         <section className="safety-notice">
           <CircleAlert size={20} />
           <p>
-            Strava OAuth is ready in the app, but the production server still needs `drift.strava_client_id` and
-            `drift.strava_client_secret` configured in Odoo before athletes can connect real accounts.
+            Strava connection is not open yet. You can still use manual check-ins and save rituals today.
           </p>
         </section>
       )}
       <section className="settings-grid">
+        <AccountCard hasAccount={state.profile?.portalAccount} />
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Strava</p>
+              <p className="eyebrow">Run import</p>
               <h3>{state.strava.connected ? state.strava.athleteName : 'Not connected'}</h3>
             </div>
             <Activity size={22} />
           </div>
-          <p>
-            Import scope: <strong>{state.strava.readScope}</strong>. Optional export requires{' '}
-            <strong>activity:write</strong>.
-          </p>
+          <p>Connect Strava so DRIFT can see weekly run load, recent effort, and last-run timing.</p>
           <div className="button-row">
             <button className="button primary" type="button" onClick={connect}>
-              <RefreshCw size={17} /> {state.strava.connected ? 'Sync demo data' : 'Connect Strava'}
-            </button>
-            <button className="button ghost" type="button" onClick={() => updateState((current) => enableWriteScope(current))}>
-              <ShieldCheck size={17} /> {state.strava.writeScope ? 'Write enabled' : 'Enable export'}
+              <RefreshCw size={17} /> {state.strava.connected ? 'Refresh Strava' : 'Connect Strava'}
             </button>
           </div>
         </article>
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">PWA Install</p>
-              <h3>Use it like an app.</h3>
+              <p className="eyebrow">Install</p>
+              <h3>Add DRIFT to your home screen.</h3>
             </div>
             <Smartphone size={22} />
           </div>
@@ -758,34 +763,15 @@ function SettingsPage({ state, privacy, updateState }) {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">OpenAI privacy</p>
-              <h3>{privacy.openai_configured ? privacy.mode : 'Rules engine until OpenAI is configured'}</h3>
+              <p className="eyebrow">Privacy</p>
+              <h3>Private by default.</h3>
             </div>
             <Lock size={22} />
           </div>
-          <p>{privacy.explanation}</p>
-          <div className="api-list">
-            <code>store:false</code>
-            <code>no background mode</code>
-            <code>structured output</code>
-          </div>
+          <p>Private notes, route details, account identity, and connection credentials are not used in the AI plan.</p>
           <Link to={appPath('/privacy')} className="button ghost">
             <ShieldCheck size={17} /> Privacy details
           </Link>
-        </article>
-        <article className="panel api-panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Backend routes</p>
-              <h3>Production contract.</h3>
-            </div>
-            <RouteIcon size={22} />
-          </div>
-          <div className="api-list">
-            {Object.values(apiRoutes).map((route) => (
-              <code key={route}>{route}</code>
-            ))}
-          </div>
         </article>
       </section>
     </div>
@@ -797,64 +783,59 @@ function PrivacyPage({ privacy }) {
     <div className="screen">
       <PageIntro
         eyebrow="Privacy"
-        title="Server-side AI with minimized context."
-        copy="OpenAI receives only aggregate training and readiness fields. Strava tokens, route names, raw activity payloads, identity, and private notes stay in Odoo."
+        title="Your routes and notes are not the product."
+        copy="DRIFT can personalize a recovery plan without reading route details, maps, private notes, or identity details."
       />
       <section className="privacy-panel">
         <div>
-          <p className="eyebrow">What goes to OpenAI</p>
-          <h3>{privacy.data_sent_to_openai.length} aggregate fields</h3>
-          <p>{privacy.explanation}</p>
+          <p className="eyebrow">Used for your plan</p>
+          <h3>Recovery signals only.</h3>
+          <p>Training load, last-run timing, check-in scores, ritual streaks, and selected adjustment buttons shape the daily decision.</p>
         </div>
         <div className="privacy-list">
-          {privacy.data_sent_to_openai.map((field) => (
-            <span key={field}>{field}</span>
-          ))}
+          <span>Weekly run load</span>
+          <span>Energy / soreness / stress / sleep</span>
+          <span>Breath and sauna logs</span>
+          <span>Selected adjustment buttons</span>
         </div>
       </section>
       <section className="privacy-panel">
         <div>
-          <p className="eyebrow">What stays server-side</p>
-          <h3>Identity, tokens, routes, and notes.</h3>
-          <p>DRIFT uses Odoo as the privacy boundary. The browser never handles OpenAI keys or Strava refresh tokens.</p>
+          <p className="eyebrow">Kept out</p>
+          <h3>Routes, notes, identity, and credentials.</h3>
+          <p>Your private notes, route details, account identity, and Strava connection credentials stay out of the coaching request.</p>
         </div>
         <div className="privacy-list">
-          {privacy.data_not_sent_to_openai.map((field) => (
-            <span key={field}>{field}</span>
-          ))}
+          <span>Route names and maps</span>
+          <span>Private check-in notes</span>
+          <span>Name and email</span>
+          <span>Strava connection credentials</span>
         </div>
       </section>
       <section className="safety-notice">
         <ShieldCheck size={20} />
-          <p>
-            OpenAI request policy: <strong>store:false</strong>, structured output only, no background mode, deterministic
-            fallback when the service is unavailable.
-          </p>
-        </section>
+        <p>
+          The coaching engine runs inside DRIFT, not inside your browser. The app never sees private service keys or
+          your Strava connection credentials.
+        </p>
+      </section>
       {!privacy.openai_configured && (
         <section className="safety-notice">
           <CircleAlert size={20} />
-          <p>
-            The production OpenAI integration is implemented, but the Odoo server still needs `drift.openai_api_key`
-            configured before decisions can be generated by OpenAI.
-          </p>
+          <p>Daily plans continue with DRIFT’s standard planner until personalized AI decisions are active.</p>
         </section>
       )}
     </div>
   );
 }
 
-function StravaCallback({ updateState }) {
-  useEffect(() => {
-    updateState((current) => connectDemoStrava(current));
-  }, [updateState]);
-
+function StravaCallback() {
   return (
     <div className="screen center-screen">
       <div className="panel">
-        <p className="eyebrow">Strava Callback</p>
-        <h1>Connection captured.</h1>
-        <p>For this local MVP, the callback completes in demo mode. Production exchanges the code server-side.</p>
+        <p className="eyebrow">Strava</p>
+        <h1>Returning from Strava.</h1>
+        <p>If the connection did not complete automatically, start the Strava link again from Account.</p>
         <Link to={appPath('/today')} className="button primary">
           <ArrowRight size={17} /> Return to Today
         </Link>
@@ -865,7 +846,7 @@ function StravaCallback({ updateState }) {
 
 function HowItWorks({ connected }) {
   const steps = [
-    ['Import run load', connected ? 'Strava context is connected.' : 'Connect Strava or use manual mode.'],
+    ['Import run load', connected ? 'Strava is connected.' : 'Connect Strava or use a manual check-in.'],
     ['Check body state', 'Energy, soreness, stress, sleep.'],
     ['Get decision', 'Build, Control, Downshift, or Rest.'],
     ['Log ritual', 'Breathe, sauna, or quiet reset.'],
@@ -884,15 +865,69 @@ function HowItWorks({ connected }) {
   );
 }
 
+function AccountPrompt() {
+  return (
+    <section className="account-callout">
+      <div className="account-icon">
+        <UserRound size={24} />
+      </div>
+      <div>
+        <p className="eyebrow">Free account</p>
+        <h2>Save your history before you start building streaks.</h2>
+        <p>
+          A DRIFT account keeps your check-ins, ritual logs, Strava connection, and unlocked programs available across
+          devices.
+        </p>
+      </div>
+      <div className="account-actions">
+        <a className="button primary" href={signupUrl}>
+          <UserPlus size={17} /> Create account
+        </a>
+        <a className="button ghost" href={loginUrl}>
+          <LogIn size={17} /> Log in
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function AccountCard({ hasAccount }) {
+  return (
+    <article className="panel account-card">
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">Free account</p>
+          <h3>{hasAccount ? 'Your history is being saved.' : 'Create once. Use everywhere.'}</h3>
+        </div>
+        <UserRound size={22} />
+      </div>
+      <p>
+        {hasAccount
+          ? 'Your check-ins, rituals, Strava connection, and program access are tied to this account.'
+          : 'Save recovery history, keep streaks across devices, connect Strava, and unlock linked programs from DRIFT kits.'}
+      </p>
+      {!hasAccount && (
+        <div className="button-row">
+          <a className="button primary" href={signupUrl}>
+            <UserPlus size={17} /> Create free account
+          </a>
+          <a className="button ghost" href={loginUrl}>
+            <LogIn size={17} /> Log in
+          </a>
+        </div>
+      )}
+    </article>
+  );
+}
+
 function EmptyStravaState() {
   return (
     <section className="empty-state">
       <div>
-        <p className="eyebrow">Manual mode</p>
-        <h2>DRIFT works now. Strava makes it sharper.</h2>
+        <p className="eyebrow">Start without Strava</p>
+        <h2>Use DRIFT today. Connect Strava when ready.</h2>
         <p>
-          Without Strava, DRIFT uses your check-in and ritual history. After connecting Strava, it adds weekly run
-          load and last-run timing.
+          A manual check-in is enough to get a plan. Strava adds weekly load and last-run timing when you connect it.
         </p>
       </div>
       <Link to={appPath('/profile')} className="button primary">
@@ -938,7 +973,7 @@ function CheckInForm({ initial, onSubmit }) {
         <textarea
           value={form.note}
           onChange={(event) => update('note', event.target.value)}
-          placeholder="Optional. Stored in DRIFT, not sent to OpenAI."
+          placeholder="Optional. Private to your DRIFT account."
         />
       </label>
       <button className="button primary wide" type="submit">
@@ -1036,8 +1071,8 @@ function PrivacyNotice({ plan }) {
     <section className="safety-notice">
       <Lock size={20} />
       <p>
-        {plan.source === 'openai' ? 'Generated with OpenAI using minimized context.' : 'Offline coach mode.'} DRIFT
-        does not send route names, raw Strava payloads, free-text notes, identity, or tokens to the model.
+        {plan.source === 'openai' ? 'Personalized from your saved recovery context.' : 'Built from your check-in and ritual history.'} Route details,
+        private notes, identity, and connection credentials stay out of the coaching plan.
       </p>
     </section>
   );

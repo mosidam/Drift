@@ -5,10 +5,8 @@ import {
   buildPrivacySummary,
   buildSanitizedCoachContext,
   buildTodayPlan,
-  connectDemoStrava,
   createCheckIn,
   createRitualLog,
-  enableWriteScope,
   initialCoachState,
   markRitualExported,
   normalizeState,
@@ -24,7 +22,6 @@ const encryptionKey = Buffer.from(
 ).subarray(0, 32);
 
 let state = normalizeState(initialCoachState);
-let encryptedDemoToken = encryptToken('demo-strava-refresh-token');
 
 const responseSchema = {
   type: 'object',
@@ -126,8 +123,7 @@ const server = createServer(async (request, response) => {
       const redirectUri = process.env.STRAVA_REDIRECT_URI || `http://localhost:${port}/api/strava/callback`;
 
       if (!clientId) {
-        state = connectDemoStrava(state);
-        return send(response, 200, { mode: 'demo', state: publicState(state) });
+        return send(response, 503, { error: 'Strava credentials are not configured.' });
       }
 
       const params = new URLSearchParams({
@@ -142,14 +138,12 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === 'GET' && (url.pathname === '/api/strava/callback' || url.pathname === '/drift/strava/callback')) {
-      const code = url.searchParams.get('code') || 'demo-code';
-      encryptedDemoToken = encryptToken(`refresh-token-for-${code}`);
-      state = connectDemoStrava(state);
-      return send(response, 200, {
-        connected: true,
-        tokenStored: Boolean(encryptedDemoToken),
-        state: publicState(state),
-      });
+      const code = url.searchParams.get('code');
+      if (!code) return send(response, 400, { error: 'Missing Strava authorization code.' });
+      if (!process.env.STRAVA_CLIENT_ID || !process.env.STRAVA_CLIENT_SECRET) {
+        return send(response, 503, { error: 'Strava credentials are not configured.' });
+      }
+      return send(response, 501, { error: 'Use the Odoo DRIFT module for production Strava OAuth.' });
     }
 
     if (request.method === 'POST' && (url.pathname === '/api/strava/webhook' || url.pathname === '/drift/strava/webhook')) {
@@ -158,7 +152,7 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && (url.pathname === '/api/strava/export-ritual' || url.pathname === '/drift/strava/export-ritual')) {
       const body = await readJson(request);
-      state = enableWriteScope(state);
+      if (!state.strava.writeScope) return send(response, 403, { error: 'Strava export permission is not enabled.' });
       state = markRitualExported(state, body.ritualId);
       return send(response, 200, { exported: true, state: publicState(state) });
     }

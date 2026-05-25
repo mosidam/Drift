@@ -91,23 +91,32 @@ assert.equal(privacy.data_sent_to_openai.includes('weekly_run_km'), true);
 assert.equal(privacy.data_not_sent_to_openai.includes('free-text check-in notes'), true);
 
 const serverSource = await readFile(new URL('../server/index.mjs', import.meta.url), 'utf8');
+const sharedSource = await readFile(new URL('../src/services/driftApi.js', import.meta.url), 'utf8');
 assert.match(serverSource, /store:\s*false/);
 assert.doesNotMatch(serverSource, /background:\s*true/);
 assert.match(serverSource, /\/api\/coach\/decision/);
 assert.match(serverSource, /\/drift\/api\/bootstrap/);
 assert.match(serverSource, /\/api\/coach\/adjust/);
 assert.match(serverSource, /\/api\/privacy\/summary/);
+assert.doesNotMatch(serverSource, /connectDemoStrava|demo-strava|mode:\s*'demo'/);
+assert.doesNotMatch(sharedSource, /local-demo|demo-oauth|connectDemoStrava/);
 
 const odooController = await readFile(new URL('../odoo_addons/drift_coach/controllers/main.py', import.meta.url), 'utf8');
 const odooModels = await readFile(new URL('../odoo_addons/drift_coach/models/drift_models.py', import.meta.url), 'utf8');
+const odooManifest = await readFile(new URL('../odoo_addons/drift_coach/__manifest__.py', import.meta.url), 'utf8');
+const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
 assert.match(odooController, /\/app\/<path:path>/);
 assert.match(odooController, /X-CSRFToken/);
+assert.doesNotMatch(odooController, /_connect_demo_strava|strava=demo/);
 assert.match(odooModels, /store\": False/);
 assert.equal(odooModels.includes('drift.openai_api_key_encrypted'), true);
 assert.match(odooModels, /class DriftSettings/);
 assert.match(odooModels, /encrypted_access_token/);
 assert.doesNotMatch(odooModels, /raw_payload/);
 assert.doesNotMatch(odooModels, /route_name/);
+assert.match(odooManifest, /auth_signup/);
+assert.match(pwaSource, /Create free account|Save your recovery rhythm/);
+assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP/);
 
 console.log('coach privacy tests passed');
