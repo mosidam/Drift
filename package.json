@@ -7,11 +7,23 @@
     "dev": "vite --host 0.0.0.0",
     "api": "node server/index.mjs",
     "build": "vite build",
+    "build:native": "VITE_BASE_PATH=./ vite build",
     "build:odoo": "VITE_BASE_PATH=/drift_coach/static/pwa/ vite build --outDir odoo_addons/drift_coach/static/pwa",
+    "cap:sync": "npm run build:native && npx cap sync",
+    "cap:ls": "npx cap ls",
+    "cap:add:ios": "npx cap add ios",
+    "cap:add:android": "npx cap add android",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
     "preview": "vite preview --host 0.0.0.0",
     "test": "node tests/coach.test.mjs"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@vitejs/plugin-react": "^5.0.4",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",
@@ -20,6 +32,10 @@
     "vite": "^7.1.9"
   },
   "devDependencies": {
-    "playwright-core": "^1.59.1"
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
+    "playwright-core": "^1.59.1",
+    "typescript": "^6.0.3"
   }
 }

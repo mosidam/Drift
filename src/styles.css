@@ -37,6 +37,23 @@ html {
   background: var(--bg);
 }
 
+html.is-native-shell {
+  background: #050505;
+}
+
+html.is-native-shell body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+html.is-native-shell .app-header {
+  top: env(safe-area-inset-top);
+}
+
+html.is-native-shell .bottom-nav {
+  bottom: max(12px, env(safe-area-inset-bottom));
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;

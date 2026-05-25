@@ -108,6 +108,8 @@ const odooManifest = await readFile(new URL('../odoo_addons/drift_coach/__manife
 const odooAccess = await readFile(new URL('../odoo_addons/drift_coach/security/ir.model.access.csv', import.meta.url), 'utf8');
 const odooRules = await readFile(new URL('../odoo_addons/drift_coach/security/drift_record_rules.xml', import.meta.url), 'utf8');
 const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const nativeRuntime = await readFile(new URL('../src/nativeRuntime.js', import.meta.url), 'utf8');
+const capacitorConfig = await readFile(new URL('../capacitor.config.ts', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
 assert.match(odooController, /\/app\/login/);
 assert.match(odooController, /\/app\/signup/);
@@ -144,5 +146,11 @@ assert.match(pwaSource, /programAccessStatus/);
 assert.match(pwaSource, /Unlock with kit/);
 assert.match(pwaSource, /Sync Strava/);
 assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP|authorization code|service keys/);
+assert.match(capacitorConfig, /appId:\s*'run\.drift\.coach'/);
+assert.match(capacitorConfig, /DRIFT_NATIVE_URL/);
+assert.match(capacitorConfig, /cleartext:\s*false/);
+assert.match(nativeRuntime, /Capacitor\.isNativePlatform/);
+assert.match(nativeRuntime, /SplashScreen\.hide/);
+assert.match(nativeRuntime, /appUrlOpen/);
 
 console.log('coach privacy tests passed');
