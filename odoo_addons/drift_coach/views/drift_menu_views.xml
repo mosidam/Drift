@@ -4,14 +4,14 @@
         <field name="name">drift.protocol.tree</field>
         <field name="model">drift.protocol</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="sequence"/>
                 <field name="name"/>
                 <field name="pillar"/>
                 <field name="duration_minutes"/>
                 <field name="intensity"/>
                 <field name="active"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -34,12 +34,12 @@
                         <field name="summary"/>
                     </group>
                     <field name="step_ids">
-                        <tree editable="bottom">
+                        <list editable="bottom">
                             <field name="sequence"/>
                             <field name="name"/>
                             <field name="duration_seconds"/>
                             <field name="cue"/>
-                        </tree>
+                        </list>
                     </field>
                 </sheet>
             </form>
@@ -50,13 +50,13 @@
         <field name="name">drift.program.tree</field>
         <field name="model">drift.program</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="sequence"/>
                 <field name="name"/>
                 <field name="pillar"/>
                 <field name="duration_days"/>
                 <field name="active"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -75,12 +75,12 @@
                         <field name="summary"/>
                     </group>
                     <field name="day_ids">
-                        <tree editable="bottom">
+                        <list editable="bottom">
                             <field name="day_index"/>
                             <field name="title"/>
                             <field name="protocol_id"/>
                             <field name="action"/>
-                        </tree>
+                        </list>
                     </field>
                 </sheet>
             </form>
@@ -90,13 +90,13 @@
     <record id="action_drift_protocol" model="ir.actions.act_window">
         <field name="name">Protocols</field>
         <field name="res_model">drift.protocol</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <record id="action_drift_program" model="ir.actions.act_window">
         <field name="name">Programs</field>
         <field name="res_model">drift.program</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_drift_root" name="DRIFT" sequence="45"/>
