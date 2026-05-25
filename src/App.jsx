@@ -52,8 +52,8 @@ import {
 const API_BASE = import.meta.env.VITE_DRIFT_API_BASE || (import.meta.env.DEV ? 'http://localhost:8787' : '');
 const appPath = (path = '') => `/app${path}`;
 const assetUrl = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
-const loginUrl = '/web/login?redirect=/app/today';
-const signupUrl = '/web/signup?redirect=/app/today';
+const loginUrl = '/app/login?redirect=/app/today';
+const signupUrl = '/app/signup?redirect=/app/today';
 
 const assets = {
   runner: assetUrl('/assets/drift-hero-runner.png'),

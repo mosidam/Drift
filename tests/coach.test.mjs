@@ -109,6 +109,8 @@ const odooAccess = await readFile(new URL('../odoo_addons/drift_coach/security/i
 const odooRules = await readFile(new URL('../odoo_addons/drift_coach/security/drift_record_rules.xml', import.meta.url), 'utf8');
 const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
 assert.match(odooController, /\/drift\/api\/bootstrap/);
+assert.match(odooController, /\/app\/login/);
+assert.match(odooController, /\/app\/signup/);
 assert.match(odooController, /\/app\/<path:path>/);
 assert.match(odooController, /X-CSRFToken/);
 assert.match(odooController, /\/drift\/strava\/sync/);
@@ -136,6 +138,7 @@ assert.match(odooRules, /drift_profile_portal_own_rule/);
 assert.match(odooRules, /profile_id\.user_id/);
 assert.match(odooRules, /profile_id\.partner_id/);
 assert.match(pwaSource, /Create free account|Your free home for recovery decisions/);
+assert.match(pwaSource, /\/app\/signup\?redirect=\/app\/today/);
 assert.match(pwaSource, /Sync Strava/);
 assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP|authorization code|service keys/);
 

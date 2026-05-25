@@ -30,6 +30,33 @@ APP_ROUTES = {
 
 
 class DriftCoachController(http.Controller):
+    @http.route("/app/login", type="http", auth="public", website=True, sitemap=False)
+    def app_login(self, **kwargs):
+        redirect_url = kwargs.get("redirect") or "/app/today"
+        if not request.env.user._is_public():
+            return redirect(redirect_url, code=302)
+        return request.render(
+            "drift_coach.app_login",
+            {
+                "redirect_url": redirect_url,
+                "signup_url": self._app_auth_url("/app/signup", redirect_url),
+            },
+        )
+
+    @http.route("/app/signup", type="http", auth="public", website=True, sitemap=False)
+    def app_signup(self, **kwargs):
+        redirect_url = kwargs.get("redirect") or "/app/today"
+        if not request.env.user._is_public():
+            return redirect(redirect_url, code=302)
+        return request.render(
+            "drift_coach.app_signup",
+            {
+                "redirect_url": redirect_url,
+                "login_url": self._app_auth_url("/app/login", redirect_url),
+                "signup_token": kwargs.get("token") or "",
+            },
+        )
+
     @http.route(["/app", "/app/<path:path>"], type="http", auth="public", website=True, sitemap=False)
     def app_shell(self, path="", **kwargs):
         if path in {"manifest.webmanifest", "sw.js"}:
@@ -336,6 +363,10 @@ class DriftCoachController(http.Controller):
         response = redirect(f"{path}?strava={status}", code=302)
         response.delete_cookie("drift_strava_state")
         return response
+
+    @staticmethod
+    def _app_auth_url(path, redirect_url):
+        return f"{path}?{urllib.parse.urlencode({'redirect': redirect_url})}"
 
     def _sync_recent_strava_activities(self, profile, account):
         token = self._strava_access_token(account)

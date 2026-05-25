@@ -24,6 +24,211 @@
         </xpath>
     </template>
 
+    <template id="app_auth_layout" name="DRIFT App Account Layout">
+        <t t-call="website.layout">
+            <style>
+                .drift-auth {
+                    min-height: 76vh;
+                    display: grid;
+                    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.62fr);
+                    gap: clamp(22px, 4vw, 54px);
+                    align-items: center;
+                    padding: clamp(42px, 8vw, 96px) clamp(18px, 5vw, 72px);
+                    color: #f4efe2;
+                    background:
+                        linear-gradient(90deg, rgba(5, 5, 5, 0.94), rgba(5, 5, 5, 0.72)),
+                        url('/drift_coach/static/pwa/assets/drift-hero-runner.png') center / cover no-repeat;
+                }
+                .drift-auth__intro {
+                    max-width: 760px;
+                }
+                .drift-auth__eyebrow {
+                    margin: 0 0 14px;
+                    color: #d87435;
+                    font-size: 12px;
+                    font-weight: 900;
+                    letter-spacing: .16em;
+                    text-transform: uppercase;
+                }
+                .drift-auth h1 {
+                    margin: 0;
+                    color: #f4efe2;
+                    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                    font-size: clamp(48px, 8vw, 108px);
+                    font-weight: 900;
+                    letter-spacing: 0;
+                    line-height: .9;
+                }
+                .drift-auth p {
+                    color: #d8d0bd;
+                    font-size: 17px;
+                    line-height: 1.65;
+                }
+                .drift-auth__benefits {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-top: 26px;
+                    padding: 0;
+                    list-style: none;
+                }
+                .drift-auth__benefits li {
+                    min-height: 36px;
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0 12px;
+                    border: 1px solid rgba(244, 239, 226, .16);
+                    border-radius: 999px;
+                    color: #f4efe2;
+                    background: rgba(244, 239, 226, .06);
+                    font-size: 12px;
+                    font-weight: 900;
+                    letter-spacing: .08em;
+                    text-transform: uppercase;
+                }
+                .drift-auth__form {
+                    padding: 24px;
+                    border: 1px solid rgba(244, 239, 226, .16);
+                    border-radius: 8px;
+                    background: rgba(17, 17, 15, .86);
+                    box-shadow: 0 24px 90px rgba(0, 0, 0, .38);
+                    backdrop-filter: blur(16px);
+                }
+                .drift-auth__form h2 {
+                    margin: 0 0 8px;
+                    color: #f4efe2;
+                    font-size: 28px;
+                    font-weight: 900;
+                    line-height: 1;
+                }
+                .drift-auth__field {
+                    display: grid;
+                    gap: 8px;
+                    margin-top: 14px;
+                    color: #a8a095;
+                    font-size: 12px;
+                    font-weight: 900;
+                    letter-spacing: .08em;
+                    text-transform: uppercase;
+                }
+                .drift-auth__field input {
+                    min-height: 48px;
+                    width: 100%;
+                    padding: 0 12px;
+                    color: #f4efe2;
+                    border: 1px solid rgba(244, 239, 226, .16);
+                    border-radius: 8px;
+                    background: rgba(5, 5, 5, .55);
+                }
+                .drift-auth__submit,
+                .drift-auth__link {
+                    min-height: 46px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    margin-top: 18px;
+                    border: 1px solid #f4efe2;
+                    border-radius: 999px;
+                    color: #050505;
+                    background: #f4efe2;
+                    font-weight: 900;
+                    text-decoration: none;
+                }
+                .drift-auth__link {
+                    color: #f4efe2;
+                    background: rgba(244, 239, 226, .06);
+                    border-color: rgba(244, 239, 226, .2);
+                }
+                .drift-auth__small {
+                    margin: 14px 0 0;
+                    color: #a8a095;
+                    font-size: 13px;
+                    line-height: 1.5;
+                }
+                @media (max-width: 860px) {
+                    .drift-auth {
+                        grid-template-columns: 1fr;
+                        min-height: auto;
+                    }
+                }
+            </style>
+            <main class="drift-auth">
+                <section class="drift-auth__intro">
+                    <p class="drift-auth__eyebrow">DRIFT Recovery OS</p>
+                    <h1><t t-out="headline"/></h1>
+                    <p><t t-out="intro"/></p>
+                    <ul class="drift-auth__benefits">
+                        <li>Saved check-ins</li>
+                        <li>Strava context</li>
+                        <li>Ritual streaks</li>
+                        <li>Unlocked programs</li>
+                    </ul>
+                </section>
+                <section class="drift-auth__form">
+                    <t t-out="0"/>
+                </section>
+            </main>
+        </t>
+    </template>
+
+    <template id="app_login" name="DRIFT App Login">
+        <t t-call="drift_coach.app_auth_layout">
+            <t t-set="headline" t-value="'Log in to your recovery system.'"/>
+            <t t-set="intro" t-value="'Save the work you do after training: check-ins, rituals, Strava context, and DRIFT program access.'"/>
+            <h2>Welcome back</h2>
+            <p class="drift-auth__small">Use the email and password connected to your DRIFT account.</p>
+            <form method="post" action="/web/login">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="redirect" t-att-value="redirect_url"/>
+                <input type="hidden" name="type" value="password"/>
+                <label class="drift-auth__field">
+                    <span>Email</span>
+                    <input name="login" type="email" autocomplete="email" placeholder="name@example.com" required="required"/>
+                </label>
+                <label class="drift-auth__field">
+                    <span>Password</span>
+                    <input name="password" type="password" autocomplete="current-password" placeholder="Password" required="required"/>
+                </label>
+                <button class="drift-auth__submit" type="submit">Log in</button>
+            </form>
+            <a class="drift-auth__link" t-att-href="signup_url">Create free account</a>
+            <p class="drift-auth__small">No medical promises. Just a cleaner way to close the training day.</p>
+        </t>
+    </template>
+
+    <template id="app_signup" name="DRIFT App Signup">
+        <t t-call="drift_coach.app_auth_layout">
+            <t t-set="headline" t-value="'Create your free DRIFT account.'"/>
+            <t t-set="intro" t-value="'Start free, save your Run / Breathe / Rest rhythm, and connect Strava when you are ready.'"/>
+            <h2>Start free</h2>
+            <p class="drift-auth__small">Your account keeps recovery history, streaks, and program access available across devices.</p>
+            <form method="post" action="/web/signup">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <input type="hidden" name="redirect" t-att-value="redirect_url"/>
+                <input type="hidden" name="token" t-att-value="signup_token"/>
+                <label class="drift-auth__field">
+                    <span>Name</span>
+                    <input name="name" type="text" autocomplete="name" placeholder="Your name" required="required"/>
+                </label>
+                <label class="drift-auth__field">
+                    <span>Email</span>
+                    <input name="login" type="email" autocomplete="email" placeholder="name@example.com" required="required"/>
+                </label>
+                <label class="drift-auth__field">
+                    <span>Password</span>
+                    <input name="password" type="password" autocomplete="new-password" placeholder="Password" required="required"/>
+                </label>
+                <label class="drift-auth__field">
+                    <span>Confirm password</span>
+                    <input name="confirm_password" type="password" autocomplete="new-password" placeholder="Confirm password" required="required"/>
+                </label>
+                <button class="drift-auth__submit" type="submit">Create free account</button>
+            </form>
+            <a class="drift-auth__link" t-att-href="login_url">Log in instead</a>
+        </t>
+    </template>
+
     <record id="website_menu_drift_app" model="website.menu">
         <field name="name">App</field>
         <field name="url">/app/today</field>
