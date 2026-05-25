@@ -215,7 +215,7 @@ function App() {
           />
           <Route path="/app/library" element={<LibraryPage protocols={catalog.protocols} products={catalog.products} />} />
           <Route path="/app/protocols" element={<ProtocolsPage protocols={catalog.protocols} />} />
-          <Route path="/app/programs" element={<ProgramsPage programs={catalog.programs} protocols={catalog.protocols} />} />
+          <Route path="/app/programs" element={<ProgramsPage state={state} programs={catalog.programs} protocols={catalog.protocols} />} />
           <Route
             path="/app/profile"
             element={<SettingsPage state={state} postState={postState} />}
@@ -598,7 +598,7 @@ function LibraryPage({ protocols: protocolCatalog, products }) {
   );
 }
 
-function ProgramsPage({ programs: programCatalog, protocols: protocolCatalog }) {
+function ProgramsPage({ state, programs: programCatalog, protocols: protocolCatalog }) {
   return (
     <div className="screen">
       <PageIntro
@@ -607,38 +607,71 @@ function ProgramsPage({ programs: programCatalog, protocols: protocolCatalog }) 
         copy="Programs turn single rituals into repeatable weekly systems. Start free, then unlock deeper paths through linked DRIFT kits."
       />
       <section className="program-grid">
-        {programCatalog.map((program) => (
-          <article className="program-card" key={program.id}>
-            <div className="protocol-top">
-              <CalendarDays size={22} />
-              <span>{program.pillar}</span>
-            </div>
-            <h2>{program.title}</h2>
-            <p>{program.copy}</p>
-            <div className="protocol-meta">
-              <span>
-                <Timer size={15} /> {program.durationDays} days
-              </span>
-              <span>
-                <Lock size={15} /> Linked kit unlocks full path
-              </span>
-            </div>
-            <div className="program-strip">
-              {(program.protocolIds || []).slice(0, 3).map((id) => {
-                const protocol = protocolCatalog.find((item) => item.id === id);
-                return <span key={id}>{protocol?.title || id}</span>;
-              })}
-            </div>
-            {program.commerceUrl && (
-              <a className="button ghost" href={program.commerceUrl}>
-                <ArrowRight size={17} /> View linked system
-              </a>
-            )}
-          </article>
-        ))}
+        {programCatalog.map((program) => {
+          const status = programAccessStatus(state, program);
+          return (
+            <article className="program-card" key={program.id}>
+              <div className="program-card-head">
+                <div className="protocol-top">
+                  <CalendarDays size={22} />
+                  <span>{program.pillar}</span>
+                </div>
+                <span className={`program-status is-${status.key}`}>
+                  {status.key === 'unlocked' ? <Check size={14} /> : status.key === 'preview' ? <Lock size={14} /> : <ShieldCheck size={14} />}
+                  {status.label}
+                </span>
+              </div>
+              <h2>{program.title}</h2>
+              <p>{program.copy}</p>
+              <div className="protocol-meta">
+                <span>
+                  <Timer size={15} /> {program.durationDays} days
+                </span>
+                <span>
+                  {status.key === 'unlocked' ? <Check size={15} /> : <Lock size={15} />} {status.detail}
+                </span>
+              </div>
+              <div className="program-strip">
+                {(program.protocolIds || []).slice(0, 3).map((id) => {
+                  const protocol = protocolCatalog.find((item) => item.id === id);
+                  return <span key={id}>{protocol?.title || id}</span>;
+                })}
+              </div>
+              <div className="button-row">
+                <Link to={appPath('/log')} className="button primary">
+                  <Timer size={17} /> {status.key === 'preview' ? 'Start preview' : 'Start program'}
+                </Link>
+                {program.commerceUrl && status.key !== 'unlocked' && (
+                  <a className="button ghost" href={program.commerceUrl}>
+                    <ArrowRight size={17} /> Unlock with kit
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </section>
     </div>
   );
+}
+
+function programAccessStatus(state, program) {
+  const entitlements = Array.isArray(state.entitlements) ? state.entitlements : [];
+  const isUnlocked = entitlements.some((entitlement) => {
+    if (entitlement.state && entitlement.state !== 'active') return false;
+    return (
+      (program.productTemplateId && entitlement.productTemplateId === program.productTemplateId) ||
+      (Array.isArray(entitlement.programIds) && entitlement.programIds.includes(program.id))
+    );
+  });
+
+  if (isUnlocked) {
+    return { key: 'unlocked', label: 'Unlocked', detail: 'Full path is active' };
+  }
+  if (program.commerceUrl) {
+    return { key: 'preview', label: 'Preview', detail: 'Linked kit unlocks full path' };
+  }
+  return { key: 'free', label: 'Free', detail: 'Full preview included' };
 }
 
 function ProtocolsPage({ protocols: protocolCatalog = protocols }) {

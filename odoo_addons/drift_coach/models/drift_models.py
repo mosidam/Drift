@@ -422,6 +422,9 @@ class DriftProgram(models.Model):
                 "durationDays": record.duration_days,
                 "copy": record.summary,
                 "days": record.day_ids.sorted("day_index")._app_payload(),
+                "protocolIds": list(
+                    dict.fromkeys(pid for pid in record.day_ids.sorted("day_index").mapped("protocol_id.slug") if pid)
+                ),
                 "productTemplateId": record.product_template_id.id or None,
                 "commerceUrl": f"/shop/{record.product_template_id.id}" if record.product_template_id else None,
             }

@@ -1159,6 +1159,48 @@ p {
   min-height: 340px;
 }
 
+.program-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.program-status {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(244, 239, 226, 0.06);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.program-status.is-unlocked {
+  color: #050505;
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.program-status.is-preview {
+  color: var(--text);
+  background: rgba(216, 116, 53, 0.12);
+  border-color: rgba(216, 116, 53, 0.32);
+}
+
+.program-status.is-free {
+  color: #050505;
+  background: var(--text);
+  border-color: var(--text);
+}
+
 .program-card h2 {
   margin: 0;
   font-family: 'Inter Tight', sans-serif;

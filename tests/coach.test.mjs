@@ -125,6 +125,7 @@ assert.equal(odooModels.includes('drift.openai_api_key_encrypted'), true);
 assert.match(odooModels, /class DriftSettings/);
 assert.match(odooModels, /class SaleOrder/);
 assert.match(odooModels, /_drift_grant_entitlements/);
+assert.match(odooModels, /protocolIds/);
 assert.match(odooModels, /encrypted_access_token/);
 assert.match(odooModels, /strava_activity_id/);
 assert.doesNotMatch(odooModels, /raw_payload/);
@@ -139,6 +140,8 @@ assert.match(odooRules, /profile_id\.user_id/);
 assert.match(odooRules, /profile_id\.partner_id/);
 assert.match(pwaSource, /Create free account|Your free home for recovery decisions/);
 assert.match(pwaSource, /\/app\/signup\?redirect=\/app\/today/);
+assert.match(pwaSource, /programAccessStatus/);
+assert.match(pwaSource, /Unlock with kit/);
 assert.match(pwaSource, /Sync Strava/);
 assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP|authorization code|service keys/);
 
