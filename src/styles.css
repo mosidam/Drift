@@ -331,7 +331,8 @@ p {
 .success-notice,
 .checkin-panel,
 .plan-pill,
-.account-callout {
+.account-callout,
+.start-flow {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(17, 17, 15, 0.82);
@@ -481,6 +482,57 @@ p {
     rgba(17, 17, 15, 0.86);
 }
 
+.start-flow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  background: rgba(17, 17, 15, 0.72);
+}
+
+.start-flow article {
+  min-height: 138px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border-right: 1px solid var(--line);
+}
+
+.start-flow article:last-child {
+  border-right: 0;
+}
+
+.start-flow svg {
+  color: var(--green);
+}
+
+.start-flow h3 {
+  margin: 0;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.start-flow p {
+  margin: 8px 0 0;
+  color: var(--bone);
+  line-height: 1.5;
+}
+
+.start-flow a {
+  grid-column: 2;
+  width: fit-content;
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line-strong);
+}
+
 .account-icon {
   width: 48px;
   height: 48px;
@@ -501,6 +553,10 @@ p {
   line-height: 0.96;
 }
 
+.account-card h3 {
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+}
+
 .account-callout p:not(.eyebrow) {
   max-width: 620px;
   margin: 10px 0 0;
@@ -513,6 +569,52 @@ p {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.benefit-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.benefit-list div {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 9px;
+  padding: 2px 0;
+}
+
+.benefit-list svg {
+  color: var(--green);
+}
+
+.benefit-list span {
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.benefit-list small {
+  grid-column: 2;
+  color: var(--bone);
+  line-height: 1.45;
+}
+
+.benefit-list.is-compact {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.benefit-list.is-compact div {
+  min-height: 34px;
+  display: inline-flex;
+  width: fit-content;
+  padding: 0 12px 0 0;
 }
 
 .how-grid article {
@@ -1188,6 +1290,7 @@ p {
   .program-grid,
   .decision-grid,
   .how-grid,
+  .start-flow,
   .account-callout,
   .adjust-grid,
   .privacy-panel,
@@ -1202,6 +1305,15 @@ p {
 
   .product-panel img {
     height: 140px;
+  }
+
+  .start-flow article {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .start-flow article:last-child {
+    border-bottom: 0;
   }
 }
 
@@ -1251,7 +1363,8 @@ p {
   .plan-grid,
   .checkin-panel,
   .coach-plan-strip,
-  .quick-log {
+  .quick-log,
+  .benefit-list {
     grid-template-columns: 1fr;
   }
 

@@ -69,6 +69,29 @@ const navItems = [
   ['Account', appPath('/profile'), UserRound],
 ];
 
+const accountBenefits = [
+  {
+    icon: Check,
+    title: 'Saved history',
+    copy: 'Keep check-ins, rituals, and streaks across devices.',
+  },
+  {
+    icon: Activity,
+    title: 'Strava context',
+    copy: 'Use weekly load and last-run timing for sharper decisions.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Programs',
+    copy: 'Carry your 7-Day Reset, Hot Miles, and Sauna Downshift paths.',
+  },
+  {
+    icon: Lock,
+    title: 'Private notes',
+    copy: 'Keep personal notes inside your DRIFT account.',
+  },
+];
+
 const quickRituals = [
   {
     type: 'Breathe',
@@ -210,16 +233,12 @@ function App() {
 
 function AppHeader({ state, status }) {
   const label = state.strava.connected
-    ? 'Strava connected'
+    ? 'Strava ready'
     : state.profile?.portalAccount
       ? 'Account saved'
-    : status.api === 'live' && state.profile?.mode === 'guest'
-      ? 'Free preview'
       : status.api === 'live'
-        ? 'Ready'
-        : status.api === 'error'
-          ? 'Saving paused'
-          : 'Preview';
+        ? 'Start free'
+        : 'Start free';
 
   return (
     <header className="app-header">
@@ -279,8 +298,8 @@ function TodayPage({ state, plan, status, postState, products }) {
         <div className="hero-scrim" />
         <div className="hero-copy">
           <p className="eyebrow">Recovery OS for Strava athletes</p>
-          <h1>{decisionLabel}: your next best recovery decision.</h1>
-          <p>Strava shows the workout. DRIFT helps you close the day with the right Run / Breathe / Rest ritual.</p>
+          <h1>{decisionLabel}: close the day like an athlete.</h1>
+          <p>Strava shows the workout. DRIFT turns your run, body state, and recovery habits into one clear Run / Breathe / Rest plan.</p>
           <div className="hero-actions">
             <button className="button primary" type="button" onClick={generateDecision}>
               <Brain size={17} /> Get today’s decision
@@ -291,6 +310,8 @@ function TodayPage({ state, plan, status, postState, products }) {
           </div>
         </div>
       </section>
+
+      <StartFlow hasAccount={hasAccount} hasStrava={hasStrava} />
 
       <HowItWorks connected={hasStrava} />
 
@@ -333,8 +354,8 @@ function TodayPage({ state, plan, status, postState, products }) {
             <span>{context.last_run_type}</span>
           </div>
           <p>
-            DRIFT uses weekly load, last-run timing, and your check-in. Route details and private activity names stay out
-            of the coaching plan.
+            DRIFT reads the shape of your training day: weekly load, last-run timing, and your check-in. Route names and
+            maps are not needed.
           </p>
         </div>
         <div className="panel product-panel">
@@ -342,7 +363,7 @@ function TodayPage({ state, plan, status, postState, products }) {
           <div>
             <p className="eyebrow">Contextual Tool</p>
             <h3>{recommendedProduct?.name || plan.commerce_hint}</h3>
-            <p>One useful gear match for the day, always secondary to the ritual.</p>
+            <p>One useful tool for today’s ritual. The plan comes first; gear stays optional.</p>
             {recommendedProduct?.url && (
               <a className="button ghost" href={recommendedProduct.url}>
                 <ArrowRight size={17} /> View in shop
@@ -444,9 +465,9 @@ function CoachPage({ state, plan, privacy, postState }) {
   return (
     <div className="screen coach-screen">
       <PageIntro
-        eyebrow="Plan Explainer"
-        title="Adjust the day without starting a chat."
-        copy="Tap what changed and DRIFT reshapes the plan into a clearer, easier recovery decision."
+        eyebrow="Coach"
+        title="Tune today’s plan in one tap."
+        copy="Tell DRIFT what changed and get a cleaner recovery decision without opening an open-ended chat."
       />
       <section className="coach-decision-panel">
         <div>
@@ -455,9 +476,9 @@ function CoachPage({ state, plan, privacy, postState }) {
           <p>{plan.primary_action}</p>
         </div>
         <div className="confidence-card">
-          <span>Confidence</span>
+          <span>Signal</span>
           <strong>{plan.confidence}</strong>
-          <small>{plan.source === 'openai' ? 'Personalized plan' : 'Standard plan'}</small>
+          <small>{plan.source === 'openai' ? 'Personalized' : 'Standard guide'}</small>
         </div>
       </section>
       <section className="adjust-grid" aria-label="Plan adjustment actions">
@@ -477,8 +498,8 @@ function CoachPage({ state, plan, privacy, postState }) {
       <section className="privacy-panel">
         <div>
           <p className="eyebrow">Private by default</p>
-          <h3>Only recovery context is used.</h3>
-          <p>DRIFT uses training load, check-in scores, and ritual history to explain the plan. Private notes and route details stay out.</p>
+          <h3>Your plan uses signals, not secrets.</h3>
+          <p>Training load, check-in scores, and ritual history shape the plan. Personal notes, route titles, and maps stay out.</p>
         </div>
         <div className="privacy-list">
           <span>Run load</span>
@@ -558,7 +579,7 @@ function LibraryPage({ protocols: protocolCatalog, products }) {
       <PageIntro
         eyebrow="Library"
         title="Guided recovery sessions, built around the training day."
-        copy="Browse DRIFT like an app library: short protocols, clear equipment, timer-ready steps, and optional product support."
+        copy="Browse short Run / Breathe / Rest sessions with clear timing, simple equipment, and optional product support."
       />
       <section className="filter-tabs" aria-label="Library filters">
         {['All', 'Run', 'Breathe', 'Rest'].map((item) => (
@@ -582,8 +603,8 @@ function ProgramsPage({ programs: programCatalog, protocols: protocolCatalog }) 
     <div className="screen">
       <PageIntro
         eyebrow="Programs"
-        title="Calm-like paths for Run / Breathe / Rest."
-        copy="Programs turn single rituals into weekly systems. Product purchases can unlock related paths while the free preview stays useful."
+        title="Guided paths for Run / Breathe / Rest."
+        copy="Programs turn single rituals into repeatable weekly systems. Start free, then unlock deeper paths through linked DRIFT kits."
       />
       <section className="program-grid">
         {programCatalog.map((program) => (
@@ -684,7 +705,7 @@ function GuidedProtocolCard({ protocol, products }) {
           <Zap size={15} /> {protocol.intensity}
         </span>
         <span>
-          <ShieldCheck size={15} /> {protocol.audioReady ? 'Audio-ready' : 'Timer-only'}
+          <ShieldCheck size={15} /> {protocol.audioReady ? 'Guided' : 'Timed'}
         </span>
       </div>
       <ol>
@@ -712,11 +733,11 @@ function SettingsPage({ state, postState }) {
   const stravaStatus = params.get('strava');
   const [notice, setNotice] = useState(null);
   const stravaMessage = {
-    missing_config: 'Strava connection is not open yet. You can still use manual check-ins and save rituals today.',
-    missing_code: 'Strava did not return an authorization code. Try connecting again from this screen.',
-    state_error: 'For your safety, that Strava session expired. Start the connection again.',
+    missing_config: 'Strava linking is not available yet. You can still check in, save rituals, and build your DRIFT history.',
+    missing_code: 'Strava did not finish connecting. Try again from this screen.',
+    state_error: 'That Strava attempt expired. Start the connection again from here.',
     denied: 'Strava connection was cancelled. Manual check-ins still work.',
-    read_scope_required: 'DRIFT needs activity read access to import run load from Strava.',
+    read_scope_required: 'DRIFT needs permission to read activity summaries so it can understand run load.',
     connected_sync_failed: 'Strava connected, but the first sync did not finish. Tap Sync Strava to try again.',
   }[stravaStatus];
 
@@ -733,8 +754,8 @@ function SettingsPage({ state, postState }) {
     <div className="screen">
       <PageIntro
         eyebrow="Account"
-        title="Save your recovery rhythm."
-        copy="Create a free DRIFT account to keep history, connect Strava, and carry your programs across devices."
+        title="Your free home for recovery decisions."
+        copy="Create an account to save your training context, connect Strava, keep streaks, and unlock programs from DRIFT kits."
       />
       {stravaMessage && (
         <section className="safety-notice">
@@ -753,14 +774,14 @@ function SettingsPage({ state, postState }) {
         <article className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Run import</p>
-              <h3>{state.strava.connected ? state.strava.athleteName : 'Not connected'}</h3>
+              <p className="eyebrow">Strava</p>
+              <h3>{state.strava.connected ? 'Connected for run context' : 'Add your run load'}</h3>
             </div>
             <Activity size={22} />
           </div>
           <p>
-            Connect Strava so DRIFT can see weekly run load, recent effort, and last-run timing. When Strava asks,
-            activity read powers the plan; activity write lets you send rituals back when you choose.
+            Connect Strava so DRIFT can understand weekly load, recent effort, and when you last ran. Ritual export is
+            always optional.
           </p>
           <div className="button-row">
             <button className="button primary" type="button" onClick={connect}>
@@ -772,24 +793,23 @@ function SettingsPage({ state, postState }) {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Install</p>
-              <h3>Add DRIFT to your home screen.</h3>
+              <h3>Use it like a daily app.</h3>
             </div>
             <Smartphone size={22} />
           </div>
           <p>
-            On iPhone: open Safari, tap Share, then Add to Home Screen. On Android: use the browser Install App
-            prompt.
+            Add DRIFT to your phone and open it after training: check in, get the decision, complete the ritual.
           </p>
         </article>
         <article className="panel">
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Privacy</p>
-              <h3>Private by default.</h3>
+              <h3>Built for personal training data.</h3>
             </div>
             <Lock size={22} />
           </div>
-          <p>Private notes, route details, account identity, and connection credentials are not used in the AI plan.</p>
+          <p>Your plan uses training summaries and check-in scores. Personal notes, maps, and route titles stay out.</p>
           <Link to={appPath('/privacy')} className="button ghost">
             <ShieldCheck size={17} /> Privacy details
           </Link>
@@ -804,13 +824,13 @@ function PrivacyPage({ privacy }) {
     <div className="screen">
       <PageIntro
         eyebrow="Privacy"
-        title="Your routes and notes are not the product."
-        copy="DRIFT can personalize a recovery plan without reading route details, maps, private notes, or identity details."
+        title="Your routes and notes stay yours."
+        copy="DRIFT can personalize a recovery plan from summary signals without reading maps, route titles, or personal notes."
       />
       <section className="privacy-panel">
         <div>
           <p className="eyebrow">Used for your plan</p>
-          <h3>Recovery signals only.</h3>
+          <h3>The signals that matter after training.</h3>
           <p>Training load, last-run timing, check-in scores, ritual streaks, and selected adjustment buttons shape the daily decision.</p>
         </div>
         <div className="privacy-list">
@@ -823,29 +843,22 @@ function PrivacyPage({ privacy }) {
       <section className="privacy-panel">
         <div>
           <p className="eyebrow">Kept out</p>
-          <h3>Routes, notes, identity, and credentials.</h3>
-          <p>Your private notes, route details, account identity, and Strava connection credentials stay out of the coaching request.</p>
+          <h3>Maps, route titles, notes, and identity.</h3>
+          <p>Your personal notes, route details, account identity, and Strava access details are not used to create the plan.</p>
         </div>
         <div className="privacy-list">
           <span>Route names and maps</span>
           <span>Private check-in notes</span>
           <span>Name and email</span>
-          <span>Strava connection credentials</span>
+          <span>Strava access details</span>
         </div>
       </section>
       <section className="safety-notice">
         <ShieldCheck size={20} />
         <p>
-          The coaching engine runs inside DRIFT, not inside your browser. The app never sees private service keys or
-          your Strava connection credentials.
+          DRIFT is designed to make the plan useful without turning personal training data into the product.
         </p>
       </section>
-      {!privacy.openai_configured && (
-        <section className="safety-notice">
-          <CircleAlert size={20} />
-          <p>Daily plans continue with DRIFT’s standard planner until personalized AI decisions are active.</p>
-        </section>
-      )}
     </div>
   );
 }
@@ -886,6 +899,48 @@ function HowItWorks({ connected }) {
   );
 }
 
+function StartFlow({ hasAccount, hasStrava }) {
+  const steps = [
+    {
+      icon: UserPlus,
+      title: hasAccount ? 'Account saved' : 'Create a free account',
+      copy: hasAccount ? 'Your check-ins, rituals, and program access are saved.' : 'Save history, streaks, Strava, and program access.',
+      action: hasAccount ? null : { label: 'Create account', href: signupUrl },
+    },
+    {
+      icon: Activity,
+      title: hasStrava ? 'Strava connected' : 'Connect Strava',
+      copy: hasStrava ? 'Run load is already shaping today’s plan.' : 'Add run load and last-run timing when you are ready.',
+      action: hasStrava ? null : { label: 'Connect', to: appPath('/profile') },
+    },
+    {
+      icon: Plus,
+      title: 'Check in',
+      copy: 'Energy, soreness, stress, and sleep turn the plan into today’s plan.',
+      action: { label: 'Check in', to: appPath('/log') },
+    },
+  ];
+
+  return (
+    <section className="start-flow" aria-label="Start DRIFT">
+      {steps.map((step) => {
+        const Icon = step.icon;
+        return (
+          <article key={step.title}>
+            <Icon size={20} />
+            <div>
+              <h3>{step.title}</h3>
+              <p>{step.copy}</p>
+            </div>
+            {step.action?.href && <a href={step.action.href}>{step.action.label}</a>}
+            {step.action?.to && <Link to={step.action.to}>{step.action.label}</Link>}
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
 function AccountPrompt() {
   return (
     <section className="account-callout">
@@ -894,11 +949,11 @@ function AccountPrompt() {
       </div>
       <div>
         <p className="eyebrow">Free account</p>
-        <h2>Save your history before you start building streaks.</h2>
+        <h2>Make DRIFT yours before the streaks start.</h2>
         <p>
-          A DRIFT account keeps your check-ins, ritual logs, Strava connection, and unlocked programs available across
-          devices.
+          A free account turns the app from a one-day guide into your saved recovery system.
         </p>
+        <AccountBenefitList compact />
       </div>
       <div className="account-actions">
         <a className="button primary" href={signupUrl}>
@@ -918,15 +973,16 @@ function AccountCard({ hasAccount }) {
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Free account</p>
-          <h3>{hasAccount ? 'Your history is being saved.' : 'Create once. Use everywhere.'}</h3>
+          <h3>{hasAccount ? 'Your DRIFT history is saved.' : 'Create once. Train everywhere.'}</h3>
         </div>
         <UserRound size={22} />
       </div>
       <p>
         {hasAccount
           ? 'Your check-ins, rituals, Strava connection, and program access are tied to this account.'
-          : 'Save recovery history, keep streaks across devices, connect Strava, and unlock linked programs from DRIFT kits.'}
+          : 'Start free, save your recovery rhythm, and keep every Run / Breathe / Rest decision in one place.'}
       </p>
+      <AccountBenefitList />
       {!hasAccount && (
         <div className="button-row">
           <a className="button primary" href={signupUrl}>
@@ -941,12 +997,29 @@ function AccountCard({ hasAccount }) {
   );
 }
 
+function AccountBenefitList({ compact = false }) {
+  return (
+    <div className={compact ? 'benefit-list is-compact' : 'benefit-list'}>
+      {accountBenefits.map((benefit) => {
+        const Icon = benefit.icon;
+        return (
+          <div key={benefit.title}>
+            <Icon size={16} />
+            <span>{benefit.title}</span>
+            {!compact && <small>{benefit.copy}</small>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function EmptyStravaState() {
   return (
     <section className="empty-state">
       <div>
         <p className="eyebrow">Start without Strava</p>
-        <h2>Use DRIFT today. Connect Strava when ready.</h2>
+        <h2>Use DRIFT today. Add Strava when ready.</h2>
         <p>
           A manual check-in is enough to get a plan. Strava adds weekly load and last-run timing when you connect it.
         </p>
@@ -1093,7 +1166,7 @@ function PrivacyNotice({ plan }) {
       <Lock size={20} />
       <p>
         {plan.source === 'openai' ? 'Personalized from your saved recovery context.' : 'Built from your check-in and ritual history.'} Route details,
-        private notes, identity, and connection credentials stay out of the coaching plan.
+        private notes, identity, and account access details stay out of the coaching plan.
       </p>
     </section>
   );

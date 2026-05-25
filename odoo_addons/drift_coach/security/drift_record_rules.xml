@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="drift_profile_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT profile: portal own records</field>
+        <field name="model_id" ref="model_drift_profile"/>
+        <field name="domain_force">['|', ('user_id', '=', user.id), ('partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_activity_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT activity: portal own records</field>
+        <field name="model_id" ref="model_drift_activity"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_checkin_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT check-in: portal own records</field>
+        <field name="model_id" ref="model_drift_checkin"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_ritual_log_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT ritual log: portal own records</field>
+        <field name="model_id" ref="model_drift_ritual_log"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_coach_decision_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT coach decision: portal own records</field>
+        <field name="model_id" ref="model_drift_coach_decision"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_privacy_event_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT privacy event: portal own records</field>
+        <field name="model_id" ref="model_drift_privacy_event"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="drift_entitlement_portal_own_rule" model="ir.rule">
+        <field name="name">DRIFT entitlement: portal own records</field>
+        <field name="model_id" ref="model_drift_entitlement"/>
+        <field name="domain_force">['|', ('profile_id.user_id', '=', user.id), ('profile_id.partner_id', '=', user.partner_id.id)]</field>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

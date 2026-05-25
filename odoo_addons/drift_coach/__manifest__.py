@@ -9,6 +9,7 @@
     "depends": ["website", "website_sale", "portal", "auth_signup"],
     "data": [
         "security/ir.model.access.csv",
+        "security/drift_record_rules.xml",
         "data/drift_seed_data.xml",
         "views/product_template_views.xml",
         "views/drift_menu_views.xml",
