@@ -154,8 +154,12 @@ function App() {
       return payload;
     } catch {
       const next = fallback(state);
-      setState(normalizeState(next));
-      setStatus({ api: 'local', coach: 'offline' });
+      if (import.meta.env.DEV) {
+        setState(normalizeState(next));
+        setStatus({ api: 'local', coach: 'offline' });
+      } else {
+        setStatus({ api: 'error', coach: status.coach });
+      }
       return { state: next, decision: buildTodayPlan(next) };
     }
   };
@@ -204,7 +208,15 @@ function App() {
 }
 
 function AppHeader({ state, status }) {
-  const label = state.strava.connected ? 'Strava live' : status.api === 'live' ? 'Manual mode' : 'Offline demo';
+  const label = state.strava.connected
+    ? 'Strava live'
+    : status.api === 'live' && state.profile?.mode === 'guest'
+      ? 'Guest preview'
+      : status.api === 'live'
+        ? 'Manual mode'
+        : status.api === 'error'
+          ? 'Sync issue'
+          : 'Local preview';
 
   return (
     <header className="app-header">
@@ -221,7 +233,7 @@ function AppHeader({ state, status }) {
         ))}
       </nav>
       <div className="header-status">
-        <span className={state.strava.connected ? 'status-dot is-live' : 'status-dot'} />
+        <span className={state.strava.connected || status.api === 'live' ? 'status-dot is-live' : 'status-dot'} />
         <span>{label}</span>
       </div>
     </header>

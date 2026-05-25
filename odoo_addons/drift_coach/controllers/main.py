@@ -234,7 +234,7 @@ class DriftCoachController(http.Controller):
 
     def _require_csrf(self):
         token = request.httprequest.headers.get("X-CSRFToken") or request.httprequest.headers.get("X-Drift-CSRF")
-        if token and token == request.csrf_token():
+        if token and request.validate_csrf(token):
             return
         raise Forbidden("Missing or invalid CSRF token")
 

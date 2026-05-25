@@ -11,4 +11,11 @@
             </div>
         </t>
     </template>
+
+    <record id="website_menu_drift_app" model="website.menu">
+        <field name="name">App</field>
+        <field name="url">/app/today</field>
+        <field name="parent_id" ref="website.main_menu"/>
+        <field name="sequence">45</field>
+    </record>
 </odoo>
