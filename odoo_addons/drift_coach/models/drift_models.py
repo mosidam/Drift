@@ -892,6 +892,65 @@ class DriftEntitlement(models.Model):
         ]
 
 
+class SaleOrder(models.Model):
+    _inherit = "sale.order"
+
+    def action_confirm(self):
+        result = super().action_confirm()
+        self._drift_grant_entitlements()
+        return result
+
+    def _drift_grant_entitlements(self):
+        Entitlement = self.env["drift.entitlement"].sudo()
+        Profile = self.env["drift.profile"].sudo()
+        for order in self.sudo():
+            if order.state not in {"sale", "done"} or not order.partner_id:
+                continue
+            profile = self._drift_profile_for_order(order, Profile)
+            for line in order.order_line:
+                template = line.product_id.product_tmpl_id
+                if not template or not self._drift_unlocks_app_content(template):
+                    continue
+                existing = Entitlement.search(
+                    [
+                        ("profile_id", "=", profile.id),
+                        ("product_template_id", "=", template.id),
+                        ("sale_order_id", "=", order.id),
+                    ],
+                    limit=1,
+                )
+                if not existing:
+                    Entitlement.create(
+                        {
+                            "profile_id": profile.id,
+                            "partner_id": order.partner_id.id,
+                            "product_template_id": template.id,
+                            "sale_order_id": order.id,
+                            "state": "active",
+                        }
+                    )
+
+    def _drift_profile_for_order(self, order, Profile):
+        partner = order.partner_id
+        profile = Profile.search([("partner_id", "=", partner.id)], limit=1)
+        if profile:
+            return profile
+        users = self.env["res.users"].sudo().search([("partner_id", "=", partner.id)], limit=1)
+        return Profile.create(
+            {
+                "partner_id": partner.id,
+                "user_id": users.id if users else False,
+                "display_name": partner.name or "DRIFT Athlete",
+                "timezone": users.tz if users and users.tz else "UTC",
+                "mode": "portal" if users else "guest",
+            }
+        )
+
+    @staticmethod
+    def _drift_unlocks_app_content(template):
+        return bool(template.drift_pillar or template.drift_protocol_ids or template.drift_program_ids)
+
+
 class DriftSettings(models.TransientModel):
     _name = "drift.settings"
     _description = "DRIFT Integration Settings"

@@ -260,6 +260,10 @@ class DriftCoachController(http.Controller):
         if not user._is_public():
             profile = profile_model.search([("user_id", "=", user.id)], limit=1)
             if not profile:
+                profile = profile_model.search([("partner_id", "=", user.partner_id.id)], limit=1)
+                if profile:
+                    profile.merge_into_portal_user(user)
+            if not profile:
                 guest_profile, guest_key = self._guest_profile()
                 profile = guest_profile.merge_into_portal_user(user)
                 return profile, guest_key
