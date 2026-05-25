@@ -315,6 +315,7 @@ class DriftRitualLog(models.Model):
     duration_minutes = fields.Integer(required=True)
     private = fields.Boolean(default=True)
     exported_to_strava = fields.Boolean(default=False)
+    strava_activity_id = fields.Char(index=True, copy=False)
     exported_at = fields.Datetime()
     created_at = fields.Datetime(default=fields.Datetime.now, required=True)
 

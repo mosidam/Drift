@@ -146,6 +146,10 @@ const server = createServer(async (request, response) => {
       return send(response, 501, { error: 'Use the Odoo DRIFT module for production Strava OAuth.' });
     }
 
+    if (request.method === 'POST' && (url.pathname === '/api/strava/sync' || url.pathname === '/drift/strava/sync')) {
+      return send(response, 501, { error: 'Use the Odoo DRIFT module for production Strava sync.' });
+    }
+
     if (request.method === 'POST' && (url.pathname === '/api/strava/webhook' || url.pathname === '/drift/strava/webhook')) {
       return send(response, 202, { accepted: true });
     }

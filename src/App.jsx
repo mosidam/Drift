@@ -195,7 +195,7 @@ function App() {
           <Route path="/app/programs" element={<ProgramsPage programs={catalog.programs} protocols={catalog.protocols} />} />
           <Route
             path="/app/profile"
-            element={<SettingsPage state={state} />}
+            element={<SettingsPage state={state} postState={postState} />}
           />
           <Route path="/app/privacy" element={<PrivacyPage privacy={privacy} />} />
           <Route path="/app/strava/callback" element={<StravaCallback updateState={updateState} />} />
@@ -706,12 +706,26 @@ function GuidedProtocolCard({ protocol, products }) {
   );
 }
 
-function SettingsPage({ state }) {
+function SettingsPage({ state, postState }) {
   const oauthUrl = buildStravaOAuthUrl();
   const params = new URLSearchParams(window.location.search);
-  const stravaMissingConfig = params.get('strava') === 'missing_config';
+  const stravaStatus = params.get('strava');
+  const [notice, setNotice] = useState(null);
+  const stravaMessage = {
+    missing_config: 'Strava connection is not open yet. You can still use manual check-ins and save rituals today.',
+    missing_code: 'Strava did not return an authorization code. Try connecting again from this screen.',
+    state_error: 'For your safety, that Strava session expired. Start the connection again.',
+    denied: 'Strava connection was cancelled. Manual check-ins still work.',
+    read_scope_required: 'DRIFT needs activity read access to import run load from Strava.',
+    connected_sync_failed: 'Strava connected, but the first sync did not finish. Tap Sync Strava to try again.',
+  }[stravaStatus];
 
-  const connect = () => {
+  const connect = async () => {
+    if (state.strava.connected) {
+      await postState(apiRoutes.stravaSync, {}, (current) => current);
+      setNotice('Strava synced. Your next plan will use the latest run context.');
+      return;
+    }
     if (oauthUrl) window.location.href = `${API_BASE}${oauthUrl}`;
   };
 
@@ -722,12 +736,16 @@ function SettingsPage({ state }) {
         title="Save your recovery rhythm."
         copy="Create a free DRIFT account to keep history, connect Strava, and carry your programs across devices."
       />
-      {stravaMissingConfig && (
+      {stravaMessage && (
         <section className="safety-notice">
           <CircleAlert size={20} />
-          <p>
-            Strava connection is not open yet. You can still use manual check-ins and save rituals today.
-          </p>
+          <p>{stravaMessage}</p>
+        </section>
+      )}
+      {notice && (
+        <section className="success-notice" role="status">
+          <Check size={20} />
+          <p>{notice}</p>
         </section>
       )}
       <section className="settings-grid">
@@ -740,10 +758,13 @@ function SettingsPage({ state }) {
             </div>
             <Activity size={22} />
           </div>
-          <p>Connect Strava so DRIFT can see weekly run load, recent effort, and last-run timing.</p>
+          <p>
+            Connect Strava so DRIFT can see weekly run load, recent effort, and last-run timing. When Strava asks,
+            activity read powers the plan; activity write lets you send rituals back when you choose.
+          </p>
           <div className="button-row">
             <button className="button primary" type="button" onClick={connect}>
-              <RefreshCw size={17} /> {state.strava.connected ? 'Refresh Strava' : 'Connect Strava'}
+              <RefreshCw size={17} /> {state.strava.connected ? 'Sync Strava' : 'Connect Strava'}
             </button>
           </div>
         </article>

@@ -98,6 +98,7 @@ assert.match(serverSource, /\/api\/coach\/decision/);
 assert.match(serverSource, /\/drift\/api\/bootstrap/);
 assert.match(serverSource, /\/api\/coach\/adjust/);
 assert.match(serverSource, /\/api\/privacy\/summary/);
+assert.match(serverSource, /\/drift\/strava\/sync/);
 assert.doesNotMatch(serverSource, /connectDemoStrava|demo-strava|mode:\s*'demo'/);
 assert.doesNotMatch(sharedSource, /local-demo|demo-oauth|connectDemoStrava/);
 
@@ -108,15 +109,23 @@ const pwaSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'ut
 assert.match(odooController, /\/drift\/api\/bootstrap/);
 assert.match(odooController, /\/app\/<path:path>/);
 assert.match(odooController, /X-CSRFToken/);
+assert.match(odooController, /\/drift\/strava\/sync/);
+assert.match(odooController, /activity:read,activity:read_all,activity:write/);
+assert.match(odooController, /_make_oauth_state/);
+assert.match(odooController, /_valid_oauth_state/);
+assert.match(odooController, /_refresh_strava_token/);
+assert.match(odooController, /_create_strava_ritual_activity/);
 assert.doesNotMatch(odooController, /_connect_demo_strava|strava=demo/);
 assert.match(odooModels, /store\": False/);
 assert.equal(odooModels.includes('drift.openai_api_key_encrypted'), true);
 assert.match(odooModels, /class DriftSettings/);
 assert.match(odooModels, /encrypted_access_token/);
+assert.match(odooModels, /strava_activity_id/);
 assert.doesNotMatch(odooModels, /raw_payload/);
 assert.doesNotMatch(odooModels, /route_name/);
 assert.match(odooManifest, /auth_signup/);
 assert.match(pwaSource, /Create free account|Save your recovery rhythm/);
+assert.match(pwaSource, /Sync Strava/);
 assert.doesNotMatch(pwaSource, /Backend routes|Sync demo data|Offline coach mode|local MVP/);
 
 console.log('coach privacy tests passed');

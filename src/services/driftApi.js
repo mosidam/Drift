@@ -13,6 +13,7 @@ export const apiRoutes = {
   privacySummary: '/drift/api/privacy/summary',
   stravaConnect: '/drift/strava/connect',
   stravaCallback: '/drift/strava/callback',
+  stravaSync: '/drift/strava/sync',
   stravaWebhook: '/drift/strava/webhook',
   stravaExportRitual: '/drift/strava/export-ritual',
 };

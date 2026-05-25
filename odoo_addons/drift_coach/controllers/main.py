@@ -1,8 +1,11 @@
+import hashlib
+import hmac
 import json
 import os
 import urllib.parse
 import urllib.request
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta, timezone
 
 from odoo import fields, http, tools
 from odoo.http import request
@@ -138,32 +141,50 @@ class DriftCoachController(http.Controller):
 
     @http.route("/drift/strava/connect", type="http", auth="public", methods=["GET"], csrf=False)
     def strava_connect(self, **kwargs):
+        profile, guest_key = self._current_profile()
         client_id = self._config("strava_client_id", "STRAVA_CLIENT_ID")
         redirect_uri = self._config("strava_redirect_uri", "STRAVA_REDIRECT_URI") or request.httprequest.host_url.rstrip("/") + "/drift/strava/callback"
         if not client_id:
             return redirect("/app/profile?strava=missing_config", code=302)
 
+        oauth_state = self._make_oauth_state(profile)
         params = urllib.parse.urlencode(
             {
                 "client_id": client_id,
                 "redirect_uri": redirect_uri,
                 "response_type": "code",
                 "approval_prompt": "auto",
-                "scope": "activity:read,activity:read_all",
+                "scope": "activity:read,activity:read_all,activity:write",
+                "state": oauth_state,
             }
         )
-        return redirect(f"https://www.strava.com/oauth/authorize?{params}", code=302)
+        response = redirect(f"https://www.strava.com/oauth/authorize?{params}", code=302)
+        response.set_cookie("drift_strava_state", oauth_state, max_age=600, httponly=True, samesite="Lax")
+        if guest_key:
+            response.set_cookie("drift_guest", guest_key, max_age=60 * 60 * 24 * 365, httponly=True, samesite="Lax")
+        return response
 
     @http.route("/drift/strava/callback", type="http", auth="public", methods=["GET"], csrf=False)
     def strava_callback(self, **kwargs):
         profile, _guest_key = self._current_profile()
+        if kwargs.get("error"):
+            return self._strava_redirect("denied")
+
         code = kwargs.get("code")
         if not code:
-            return redirect("/app/profile?strava=missing_code", code=302)
+            return self._strava_redirect("missing_code")
+        state = kwargs.get("state")
+        cookie_state = request.httprequest.cookies.get("drift_strava_state")
+        if not state or not cookie_state or not hmac.compare_digest(state, cookie_state) or not self._valid_oauth_state(profile, state):
+            return self._strava_redirect("state_error")
         if not self._config("strava_client_id", "STRAVA_CLIENT_ID") or not self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"):
-            return redirect("/app/profile?strava=missing_config", code=302)
+            return self._strava_redirect("missing_config")
 
         token_payload = self._exchange_strava_code(code)
+        accepted_scope = kwargs.get("scope") or token_payload.get("scope") or ""
+        if not self._scope_has(accepted_scope, "activity:read"):
+            return self._strava_redirect("read_scope_required")
+
         account_model = request.env["drift.strava.account"].sudo()
         athlete = token_payload.get("athlete") or {}
         account_model.search([("profile_id", "=", profile.id)]).unlink()
@@ -172,15 +193,29 @@ class DriftCoachController(http.Controller):
                 "profile_id": profile.id,
                 "athlete_id": str(athlete.get("id")),
                 "athlete_name_hash": account_model.hash_private_label(athlete.get("username") or athlete.get("firstname") or ""),
-                "scope": token_payload.get("scope") or "activity:read",
+                "scope": accepted_scope or "activity:read",
                 "encrypted_access_token": account_model.encrypt_token(token_payload["access_token"]),
                 "encrypted_refresh_token": account_model.encrypt_token(token_payload["refresh_token"]),
                 "expires_at": datetime.utcfromtimestamp(int(token_payload.get("expires_at"))),
                 "last_sync_at": fields.Datetime.now(),
             }
         )
+        status = "connected"
+        try:
+            self._sync_recent_strava_activities(profile, account)
+        except Exception:
+            status = "connected_sync_failed"
+        return self._strava_redirect(status, "/app/today")
+
+    @http.route("/drift/strava/sync", type="http", auth="public", methods=["POST"], csrf=False)
+    def strava_sync(self, **kwargs):
+        self._require_csrf()
+        profile, _guest_key = self._current_profile()
+        account = profile.strava_account_ids[:1]
+        if not account:
+            return request.make_json_response({"synced": False, "reason": "not_connected", "state": profile._state_payload()}, status=409)
         self._sync_recent_strava_activities(profile, account)
-        return redirect("/app/today?strava=connected", code=302)
+        return request.make_json_response(profile.action_build_bootstrap(), status=201)
 
     @http.route("/drift/strava/webhook", type="http", auth="public", methods=["GET", "POST"], csrf=False)
     def strava_webhook(self, **kwargs):
@@ -189,6 +224,13 @@ class DriftCoachController(http.Controller):
             if kwargs.get("hub.verify_token") == verify_token:
                 return request.make_json_response({"hub.challenge": kwargs.get("hub.challenge")})
             raise Forbidden()
+        body = self._json_body()
+        account = request.env["drift.strava.account"].sudo().search([("athlete_id", "=", str(body.get("owner_id") or ""))], limit=1)
+        if account:
+            try:
+                self._sync_recent_strava_activities(account.profile_id, account)
+            except Exception:
+                pass
         return request.make_json_response({"accepted": True}, status=202)
 
     @http.route("/drift/strava/export-ritual", type="http", auth="public", methods=["POST"], csrf=False)
@@ -198,9 +240,18 @@ class DriftCoachController(http.Controller):
         body = self._json_body()
         ritual_id = str(body.get("ritualId") or "").replace("ritual-", "")
         ritual = request.env["drift.ritual.log"].sudo().search([("id", "=", ritual_id), ("profile_id", "=", profile.id)], limit=1)
-        if ritual:
-            ritual.write({"exported_to_strava": True, "exported_at": fields.Datetime.now()})
-        return request.make_json_response({"exported": bool(ritual), "state": profile._state_payload()})
+        if not ritual:
+            return request.make_json_response({"exported": False, "reason": "missing_ritual", "state": profile._state_payload()}, status=404)
+        account = profile.strava_account_ids[:1]
+        if not account:
+            return request.make_json_response({"exported": False, "reason": "not_connected", "state": profile._state_payload()}, status=409)
+        if not self._scope_has(account.scope, "activity:write"):
+            return request.make_json_response({"exported": False, "reason": "missing_write_scope", "state": profile._state_payload()}, status=409)
+        if ritual.exported_to_strava and ritual.strava_activity_id:
+            return request.make_json_response({"exported": True, "state": profile._state_payload()})
+        strava_activity_id = self._create_strava_ritual_activity(account, ritual)
+        ritual.write({"exported_to_strava": True, "exported_at": fields.Datetime.now(), "strava_activity_id": str(strava_activity_id or "")})
+        return request.make_json_response({"exported": True, "state": profile._state_payload()})
 
     def _current_profile(self):
         env = request.env
@@ -258,8 +309,32 @@ class DriftCoachController(http.Controller):
             content_type = "application/javascript"
         return request.make_response(content, headers=[("Content-Type", content_type)])
 
+    def _make_oauth_state(self, profile):
+        nonce = uuid.uuid4().hex
+        body = f"{profile.id}:{nonce}"
+        secret = request.env["drift.strava.account"].sudo()._token_secret()
+        signature = hmac.new(secret, body.encode("utf-8"), hashlib.sha256).hexdigest()
+        return f"{body}:{signature}"
+
+    def _valid_oauth_state(self, profile, state):
+        parts = (state or "").split(":")
+        if len(parts) != 3:
+            return False
+        profile_id, nonce, signature = parts
+        if str(profile.id) != profile_id or not nonce:
+            return False
+        body = f"{profile_id}:{nonce}"
+        secret = request.env["drift.strava.account"].sudo()._token_secret()
+        expected = hmac.new(secret, body.encode("utf-8"), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(signature, expected)
+
+    def _strava_redirect(self, status, path="/app/profile"):
+        response = redirect(f"{path}?strava={status}", code=302)
+        response.delete_cookie("drift_strava_state")
+        return response
+
     def _sync_recent_strava_activities(self, profile, account):
-        token = request.env["drift.strava.account"].sudo().decrypt_token(account.encrypted_access_token)
+        token = self._strava_access_token(account)
         req = urllib.request.Request(
             "https://www.strava.com/api/v3/athlete/activities?per_page=30",
             headers={"Authorization": f"Bearer {token}"},
@@ -292,6 +367,63 @@ class DriftCoachController(http.Controller):
                 activity_model.create(values)
         account.write({"last_sync_at": fields.Datetime.now()})
 
+    def _create_strava_ritual_activity(self, account, ritual):
+        token = self._strava_access_token(account)
+        started_at = ritual.created_at or fields.Datetime.now()
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+        data = urllib.parse.urlencode(
+            {
+                "name": f"DRIFT: {ritual.title}",
+                "sport_type": "Workout",
+                "type": "Workout",
+                "start_date_local": started_at.isoformat(),
+                "elapsed_time": max(60, int(ritual.duration_minutes or 1) * 60),
+                "description": "DRIFT Run / Breathe / Rest ritual exported by the athlete.",
+                "trainer": 1,
+                "commute": 0,
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            "https://www.strava.com/api/v3/activities",
+            data=data,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=18) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        return payload.get("id")
+
+    def _strava_access_token(self, account):
+        if account.expires_at and account.expires_at > fields.Datetime.now() + timedelta(minutes=10):
+            return request.env["drift.strava.account"].sudo().decrypt_token(account.encrypted_access_token)
+        return self._refresh_strava_token(account)
+
+    def _refresh_strava_token(self, account):
+        refresh_token = request.env["drift.strava.account"].sudo().decrypt_token(account.encrypted_refresh_token)
+        data = urllib.parse.urlencode(
+            {
+                "client_id": self._config("strava_client_id", "STRAVA_CLIENT_ID"),
+                "client_secret": self._secret_config("strava_client_secret", "STRAVA_CLIENT_SECRET"),
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+            }
+        ).encode("utf-8")
+        req = urllib.request.Request("https://www.strava.com/oauth/token", data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=18) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        account.write(
+            {
+                "encrypted_access_token": request.env["drift.strava.account"].sudo().encrypt_token(payload["access_token"]),
+                "encrypted_refresh_token": request.env["drift.strava.account"].sudo().encrypt_token(payload.get("refresh_token") or refresh_token),
+                "expires_at": datetime.utcfromtimestamp(int(payload.get("expires_at"))),
+            }
+        )
+        return payload["access_token"]
+
     def _exchange_strava_code(self, code):
         redirect_uri = self._config("strava_redirect_uri", "STRAVA_REDIRECT_URI") or request.httprequest.host_url.rstrip("/") + "/drift/strava/callback"
         data = urllib.parse.urlencode(
@@ -320,6 +452,11 @@ class DriftCoachController(http.Controller):
         if encrypted:
             return request.env["drift.strava.account"].sudo().decrypt_token(encrypted)
         return params.get_param(f"drift.{key}") or tools.config.get(f"drift_{key}") or os.environ.get(env_key)
+
+    @staticmethod
+    def _scope_has(scope, required):
+        scopes = set((scope or "").replace(",", " ").split())
+        return required in scopes
 
     @staticmethod
     def _scale(value, default):
