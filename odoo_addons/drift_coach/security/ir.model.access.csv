@@ -27,4 +27,5 @@ access_drift_privacy_event_user,drift.privacy.event user,model_drift_privacy_eve
 access_drift_privacy_event_portal,drift.privacy.event portal,model_drift_privacy_event,base.group_portal,1,0,0,0
 access_drift_entitlement_user,drift.entitlement user,model_drift_entitlement,base.group_user,1,1,1,1
 access_drift_entitlement_portal,drift.entitlement portal,model_drift_entitlement,base.group_portal,1,0,0,0
+access_drift_field_lead_user,drift.field.lead user,model_drift_field_lead,base.group_user,1,1,1,0
 access_drift_settings_system,drift.settings system,model_drift_settings,base.group_system,1,1,1,1

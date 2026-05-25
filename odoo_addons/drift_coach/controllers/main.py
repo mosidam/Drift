@@ -57,6 +57,22 @@ class DriftCoachController(http.Controller):
         order.with_context(skip_cart_verification=True)._cart_add(product_id=product.id, quantity=1)
         return redirect("/shop/cart", code=303)
 
+    @http.route("/drift/field-list/subscribe", type="http", auth="public", methods=["POST"], website=True, sitemap=False)
+    def field_list_subscribe(self, **kwargs):
+        return_url = self._safe_return_url(kwargs.get("return_url") or request.httprequest.referrer or "/sauna-hat")
+        if kwargs.get("company"):
+            return redirect(return_url, code=303)
+        try:
+            request.env["drift.field.lead"].sudo().action_subscribe(
+                email=kwargs.get("email"),
+                interest=kwargs.get("interest") or "sauna_hat",
+                source=kwargs.get("source") or "website",
+                consent_text=kwargs.get("consent_text") or "DRIFT Field List signup",
+            )
+        except Exception:
+            return redirect(self._with_query(return_url, "field_error", "1"), code=303)
+        return redirect(self._with_query(return_url, "joined", "1"), code=303)
+
     @http.route("/download", type="http", auth="public", website=True, sitemap=False)
     def download_redirect(self, **kwargs):
         user_agent = (request.httprequest.headers.get("User-Agent") or "").lower()
@@ -522,6 +538,18 @@ class DriftCoachController(http.Controller):
 
     def _product_url(self, product):
         return f"/shop/{product.id}" if product else "/shop"
+
+    def _safe_return_url(self, value):
+        value = value or "/"
+        if not value.startswith("/") or value.startswith("//"):
+            return "/"
+        return value
+
+    def _with_query(self, url, key, value):
+        path, fragment = (url.split("#", 1) + [""])[:2]
+        separator = "&" if "?" in path else "?"
+        output = f"{path}{separator}{urllib.parse.urlencode({key: value})}"
+        return f"{output}#{fragment}" if fragment else output
 
     def _price_label(self, product):
         if not product:

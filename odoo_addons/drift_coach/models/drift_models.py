@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -343,6 +344,89 @@ class DriftRitualLog(models.Model):
             }
             for record in self
         ]
+
+
+class DriftFieldLead(models.Model):
+    _name = "drift.field.lead"
+    _description = "DRIFT Field List Lead"
+    _order = "last_signup_at desc, create_date desc"
+
+    email = fields.Char(required=True)
+    email_normalized = fields.Char(required=True, index=True)
+    interest = fields.Selection(
+        [
+            ("sauna_hat", "Sauna Hat Founding Batch"),
+            ("sauna_downshift", "Sauna Downshift"),
+            ("rest_rituals", "Rest Rituals"),
+            ("app", "DRIFT App"),
+            ("system", "Run / Breathe / Rest System"),
+        ],
+        default="sauna_hat",
+        required=True,
+    )
+    source = fields.Char(default="website")
+    status = fields.Selection(
+        [
+            ("joined", "Joined"),
+            ("customer", "Customer"),
+            ("contacted", "Contacted"),
+            ("invalid", "Invalid"),
+        ],
+        default="joined",
+        required=True,
+    )
+    signup_count = fields.Integer(default=1)
+    consent_text = fields.Char()
+    last_signup_at = fields.Datetime(default=fields.Datetime.now, required=True)
+
+    _email_interest_unique = models.Constraint("unique(email_normalized, interest)", "This email already joined this DRIFT list.")
+
+    @api.model
+    def action_subscribe(self, email, interest="sauna_hat", source="website", consent_text=""):
+        normalized = self._normalize_email(email)
+        if not normalized:
+            raise ValidationError("Enter a valid email address.")
+        interest = interest if interest in dict(self._fields["interest"].selection) else "sauna_hat"
+        existing = self.sudo().search([("email_normalized", "=", normalized), ("interest", "=", interest)], limit=1)
+        values = {
+            "email": (email or "").strip(),
+            "email_normalized": normalized,
+            "interest": interest,
+            "source": (source or "website")[:120],
+            "status": "joined",
+            "consent_text": (consent_text or "")[:240],
+            "last_signup_at": fields.Datetime.now(),
+        }
+        if existing:
+            existing.write({**values, "signup_count": existing.signup_count + 1})
+            return existing
+        return self.sudo().create(values)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for values in vals_list:
+            values["email_normalized"] = self._normalize_email(values.get("email_normalized") or values.get("email"))
+        return super().create(vals_list)
+
+    def write(self, values):
+        if "email" in values and "email_normalized" not in values:
+            values = {**values, "email_normalized": self._normalize_email(values.get("email"))}
+        return super().write(values)
+
+    @api.constrains("email", "email_normalized")
+    def _check_email(self):
+        for record in self:
+            if not record.email_normalized:
+                raise ValidationError("Enter a valid email address.")
+
+    @staticmethod
+    def _normalize_email(email):
+        clean = (email or "").strip().lower()
+        if not clean or len(clean) > 254:
+            return ""
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", clean):
+            return ""
+        return clean
 
 
 class DriftProtocol(models.Model):

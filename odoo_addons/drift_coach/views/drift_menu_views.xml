@@ -99,6 +99,49 @@
         <field name="view_mode">list,form</field>
     </record>
 
+    <record id="drift_field_lead_tree" model="ir.ui.view">
+        <field name="name">drift.field.lead.tree</field>
+        <field name="model">drift.field.lead</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="last_signup_at"/>
+                <field name="email"/>
+                <field name="interest"/>
+                <field name="source"/>
+                <field name="status"/>
+                <field name="signup_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="drift_field_lead_form" model="ir.ui.view">
+        <field name="name">drift.field.lead.form</field>
+        <field name="model">drift.field.lead</field>
+        <field name="arch" type="xml">
+            <form string="DRIFT Field List Lead">
+                <sheet>
+                    <group>
+                        <field name="email"/>
+                        <field name="interest"/>
+                        <field name="status"/>
+                    </group>
+                    <group>
+                        <field name="source"/>
+                        <field name="signup_count" readonly="1"/>
+                        <field name="last_signup_at" readonly="1"/>
+                        <field name="consent_text" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_drift_field_lead" model="ir.actions.act_window">
+        <field name="name">Field List</field>
+        <field name="res_model">drift.field.lead</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
     <record id="drift_settings_form" model="ir.ui.view">
         <field name="name">drift.settings.form</field>
         <field name="model">drift.settings</field>
@@ -139,5 +182,6 @@
     <menuitem id="menu_drift_root" name="DRIFT" sequence="45"/>
     <menuitem id="menu_drift_protocols" name="Protocols" parent="menu_drift_root" action="action_drift_protocol" sequence="10"/>
     <menuitem id="menu_drift_programs" name="Programs" parent="menu_drift_root" action="action_drift_program" sequence="20"/>
+    <menuitem id="menu_drift_field_list" name="Field List" parent="menu_drift_root" action="action_drift_field_lead" sequence="30"/>
     <menuitem id="menu_drift_settings" name="Settings" parent="menu_drift_root" action="action_drift_settings" sequence="90" groups="base.group_system"/>
 </odoo>

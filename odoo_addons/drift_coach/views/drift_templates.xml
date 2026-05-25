@@ -470,6 +470,92 @@
                     color: #263b37;
                     line-height: 1.55;
                 }
+                .drift-sku__field-list {
+                    display: grid;
+                    grid-template-columns: minmax(0, .82fr) minmax(320px, .58fr);
+                    gap: clamp(22px, 5vw, 70px);
+                    align-items: center;
+                    padding: clamp(36px, 6vw, 82px) clamp(18px, 5vw, 68px);
+                    color: #11110f;
+                    background: #f5f0e6;
+                }
+                .drift-sku__field-list h2 {
+                    margin: 0;
+                    max-width: 820px;
+                    font-size: clamp(34px, 5vw, 66px);
+                    font-weight: 950;
+                    letter-spacing: 0;
+                    line-height: .96;
+                }
+                .drift-sku__field-list p {
+                    max-width: 650px;
+                    margin: 14px 0 0;
+                    color: #4d4a42;
+                    font-size: 17px;
+                    line-height: 1.55;
+                }
+                .drift-sku__lead-form {
+                    display: grid;
+                    gap: 10px;
+                    padding: 18px;
+                    border: 1px solid rgba(17, 17, 15, .14);
+                    border-radius: 8px;
+                    background: rgba(255, 255, 255, .42);
+                }
+                .drift-sku__lead-form label {
+                    display: grid;
+                    gap: 7px;
+                    color: #4d4a42;
+                    font-size: 12px;
+                    font-weight: 950;
+                    letter-spacing: .08em;
+                    text-transform: uppercase;
+                }
+                .drift-sku__lead-form input,
+                .drift-sku__lead-form select {
+                    min-height: 48px;
+                    width: 100%;
+                    padding: 0 12px;
+                    border: 1px solid rgba(17, 17, 15, .18);
+                    border-radius: 8px;
+                    color: #11110f;
+                    background: #fffaf0;
+                    font: 700 15px/1.2 Inter, system-ui, sans-serif;
+                }
+                .drift-sku__lead-form button {
+                    min-height: 48px;
+                    width: 100%;
+                    border: 1px solid #11110f;
+                    border-radius: 999px;
+                    color: #f5f0e6;
+                    background: #11110f;
+                    font-size: 13px;
+                    font-weight: 950;
+                    letter-spacing: .08em;
+                    text-transform: uppercase;
+                }
+                .drift-sku__form-note {
+                    margin: 0 !important;
+                    color: #6b675e !important;
+                    font-size: 13px !important;
+                }
+                .drift-sku__joined {
+                    margin: 0 0 10px !important;
+                    padding: 10px 12px;
+                    border: 1px solid rgba(66, 103, 96, .3);
+                    border-radius: 8px;
+                    color: #263b37 !important;
+                    background: rgba(184, 213, 208, .48);
+                    font-size: 14px !important;
+                    font-weight: 800;
+                }
+                .drift-sku__trap {
+                    position: absolute;
+                    left: -10000px;
+                    width: 1px;
+                    height: 1px;
+                    overflow: hidden;
+                }
                 .drift-sku__safety {
                     margin: 0;
                     padding: 16px clamp(18px, 5vw, 68px) 34px;
@@ -481,6 +567,7 @@
                 @media (max-width: 920px) {
                     .drift-sku__hero,
                     .drift-sku__split,
+                    .drift-sku__field-list,
                     .drift-sku__note {
                         grid-template-columns: 1fr;
                     }
@@ -592,6 +679,46 @@
                             <p><strong>Ritual log</strong>Save the session in DRIFT and build the habit.</p>
                         </div>
                     </div>
+                </section>
+
+                <section id="field-list" class="drift-sku__field-list">
+                    <div>
+                        <p class="drift-sku__eyebrow">Field List</p>
+                        <h2>Join the first sauna downshift circle.</h2>
+                        <p>Get Batch 002 notes, restock timing, and the short Sauna Downshift protocol when the next field note goes out. No generic newsletter, no medical promises.</p>
+                    </div>
+                    <form class="drift-sku__lead-form" action="/drift/field-list/subscribe" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="return_url" value="/sauna-hat#field-list"/>
+                        <input type="hidden" name="source" value="sauna_hat_landing"/>
+                        <input type="hidden" name="consent_text" value="Send me DRIFT field notes, product drops, and app updates."/>
+                        <label class="drift-sku__trap">
+                            <span>Company</span>
+                            <input name="company" tabindex="-1" autocomplete="off"/>
+                        </label>
+                        <t t-if="request.params.get('joined')">
+                            <p class="drift-sku__joined">You are on the Field List. Watch for the next DRIFT note.</p>
+                        </t>
+                        <t t-if="request.params.get('field_error')">
+                            <p class="drift-sku__joined">That email did not go through. Try once more.</p>
+                        </t>
+                        <label>
+                            <span>Email</span>
+                            <input name="email" type="email" autocomplete="email" placeholder="name@example.com" required="required"/>
+                        </label>
+                        <label>
+                            <span>Interest</span>
+                            <select name="interest">
+                                <option value="sauna_hat">Sauna Hat founding batch</option>
+                                <option value="sauna_downshift">Sauna Downshift ritual</option>
+                                <option value="rest_rituals">Rest Rituals</option>
+                                <option value="app">DRIFT app</option>
+                                <option value="system">Run / Breathe / Rest system</option>
+                            </select>
+                        </label>
+                        <button type="submit">Join Field List</button>
+                        <p class="drift-sku__form-note">DRIFT uses this for launch notes and product updates only. You can ask to be removed any time.</p>
+                    </form>
                 </section>
 
                 <section class="drift-sku__note">

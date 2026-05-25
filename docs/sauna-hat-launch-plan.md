@@ -46,3 +46,15 @@ The app should support customers after the first purchase:
 - Product-linked programs.
 - One contextual recommendation, never a noisy catalog.
 - Later: lifecycle email based on ritual logs and product ownership.
+
+## Field List
+
+The public landing page captures email plus one interest signal:
+
+- Sauna Hat founding batch.
+- Sauna Downshift ritual.
+- Rest Rituals.
+- DRIFT app.
+- Run / Breathe / Rest system.
+
+Use the Field List inside Odoo to read early demand before adding more SKUs. For the first 100 hats, every email should connect to one of three follow-ups: batch availability, sauna routine content, or app retention.
