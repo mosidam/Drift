@@ -349,6 +349,7 @@ class DriftRitualLog(models.Model):
         return [
             {
                 "id": f"ritual-{record.id}",
+                "protocolId": record.protocol_id.slug if record.protocol_id else None,
                 "type": record.ritual_type,
                 "title": record.title,
                 "duration": record.duration_minutes,

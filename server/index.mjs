@@ -259,7 +259,7 @@ function send(response, status, body) {
   response.writeHead(status, {
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET,POST,OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-headers': 'content-type,x-csrftoken,x-drift-csrf',
     'content-type': 'application/json; charset=utf-8',
   });
 

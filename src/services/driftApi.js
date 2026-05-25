@@ -319,6 +319,7 @@ export function createCheckIn(state, input) {
 export function createRitualLog(state, input) {
   const log = {
     id: `ritual-${Date.now()}`,
+    protocolId: input.protocolId || null,
     type: input.type,
     title: input.title,
     duration: Number(input.duration),

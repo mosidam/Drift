@@ -14,8 +14,11 @@ import {
   LogIn,
   Lock,
   Moon,
+  Pause,
+  Play,
   Plus,
   RefreshCw,
+  RotateCcw,
   Route as RouteIcon,
   ShieldCheck,
   Smartphone,
@@ -25,6 +28,7 @@ import {
   UserRound,
   Waves,
   Wind,
+  X,
   Zap,
 } from 'lucide-react';
 import {
@@ -217,8 +221,8 @@ function App() {
             path="/app/history"
             element={<HistoryPage state={state} timeline={timeline} updateState={updateState} postState={postState} />}
           />
-          <Route path="/app/library" element={<LibraryPage protocols={catalog.protocols} products={catalog.products} />} />
-          <Route path="/app/protocols" element={<ProtocolsPage protocols={catalog.protocols} />} />
+          <Route path="/app/library" element={<LibraryPage protocols={catalog.protocols} products={catalog.products} postState={postState} />} />
+          <Route path="/app/protocols" element={<ProtocolsPage protocols={catalog.protocols} postState={postState} />} />
           <Route
             path="/app/programs"
             element={<ProgramsPage state={state} programs={catalog.programs} protocols={catalog.protocols} products={catalog.products} />}
@@ -585,10 +589,22 @@ function HistoryPage({ state, timeline, postState }) {
   );
 }
 
-function LibraryPage({ protocols: protocolCatalog, products }) {
+function LibraryPage({ protocols: protocolCatalog, products, postState }) {
   const [filter, setFilter] = useState('All');
+  const [activeProtocol, setActiveProtocol] = useState(null);
+  const [notice, setNotice] = useState(null);
   const visibleProtocols =
     filter === 'All' ? protocolCatalog : protocolCatalog.filter((protocol) => protocol.pillar === filter);
+  const completeProtocol = async (protocol) => {
+    const ritual = protocolToRitual(protocol);
+    try {
+      await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
+      setNotice({ type: 'success', message: `${protocol.title} complete. Your ritual history is updated.` });
+      setActiveProtocol(null);
+    } catch (error) {
+      setNotice({ type: 'error', message: error.message || 'DRIFT could not save this session yet.' });
+    }
+  };
 
   return (
     <div className="screen">
@@ -604,11 +620,24 @@ function LibraryPage({ protocols: protocolCatalog, products }) {
           </button>
         ))}
       </section>
+      {notice && (
+        <section className={notice.type === 'error' ? 'error-notice' : 'success-notice'} role="status">
+          {notice.type === 'error' ? <CircleAlert size={20} /> : <Check size={20} />}
+          <p>{notice.message}</p>
+        </section>
+      )}
       <section className="protocol-grid">
         {visibleProtocols.map((protocol) => (
-          <GuidedProtocolCard key={protocol.id} protocol={protocol} products={products} />
+          <GuidedProtocolCard key={protocol.id} protocol={protocol} products={products} onStart={() => setActiveProtocol(protocol)} />
         ))}
       </section>
+      {activeProtocol && (
+        <ProtocolSessionModal
+          protocol={activeProtocol}
+          onClose={() => setActiveProtocol(null)}
+          onComplete={() => completeProtocol(activeProtocol)}
+        />
+      )}
       <SafetyNotice />
     </div>
   );
@@ -693,7 +722,20 @@ function programAccessStatus(state, program, linkedProduct, commerceUrl) {
   return { key: 'free', label: 'Free', detail: 'Full preview included' };
 }
 
-function ProtocolsPage({ protocols: protocolCatalog = protocols }) {
+function ProtocolsPage({ protocols: protocolCatalog = protocols, postState }) {
+  const [activeProtocol, setActiveProtocol] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const completeProtocol = async (protocol) => {
+    const ritual = protocolToRitual(protocol);
+    try {
+      await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
+      setNotice({ type: 'success', message: `${protocol.title} complete. Your ritual history is updated.` });
+      setActiveProtocol(null);
+    } catch (error) {
+      setNotice({ type: 'error', message: error.message || 'DRIFT could not save this session yet.' });
+    }
+  };
+
   return (
     <div className="screen">
       <PageIntro
@@ -701,6 +743,12 @@ function ProtocolsPage({ protocols: protocolCatalog = protocols }) {
         title="Rituals for the hours around training."
         copy="Run gives the signal. Breathe and Rest close the loop. DRIFT protocols are practical, not medical."
       />
+      {notice && (
+        <section className={notice.type === 'error' ? 'error-notice' : 'success-notice'} role="status">
+          {notice.type === 'error' ? <CircleAlert size={20} /> : <Check size={20} />}
+          <p>{notice.message}</p>
+        </section>
+      )}
       <section className="protocol-grid">
         {protocolCatalog.map((protocol) => {
           const Icon = protocol.pillar === 'Run' ? Activity : protocol.pillar === 'Breathe' ? Wind : Waves;
@@ -721,23 +769,30 @@ function ProtocolsPage({ protocols: protocolCatalog = protocols }) {
                 </span>
               </div>
               <ol>
-                {protocol.steps.map((step) => (
-                  <li key={step}>{step}</li>
+                {(protocol.steps || []).map((step, index) => (
+                  <li key={`${protocol.id}-preview-${index}`}>{step}</li>
                 ))}
               </ol>
-              <button className="button ghost" type="button">
-                <ArrowRight size={17} /> {protocol.cta}
+              <button className="button primary" type="button" onClick={() => setActiveProtocol(protocol)}>
+                <Play size={17} /> Start guided session
               </button>
             </article>
           );
         })}
       </section>
+      {activeProtocol && (
+        <ProtocolSessionModal
+          protocol={activeProtocol}
+          onClose={() => setActiveProtocol(null)}
+          onComplete={() => completeProtocol(activeProtocol)}
+        />
+      )}
       <SafetyNotice />
     </div>
   );
 }
 
-function GuidedProtocolCard({ protocol, products }) {
+function GuidedProtocolCard({ protocol, products, onStart }) {
   const Icon = protocol.pillar === 'Run' ? Activity : protocol.pillar === 'Breathe' ? Wind : Waves;
   const linkedProduct = products.find((product) => (product.protocolIds || []).includes(protocol.id));
 
@@ -761,14 +816,14 @@ function GuidedProtocolCard({ protocol, products }) {
         </span>
       </div>
       <ol>
-        {protocol.steps.map((step) => (
-          <li key={step}>{step}</li>
+        {(protocol.steps || []).map((step, index) => (
+          <li key={`${protocol.id}-card-${index}`}>{step}</li>
         ))}
       </ol>
       <div className="button-row">
-        <Link to={appPath('/log')} className="button primary">
-          <Timer size={17} /> Start session
-        </Link>
+        <button className="button primary" type="button" onClick={onStart}>
+          <Play size={17} /> Start guided session
+        </button>
         {linkedProduct?.url && (
           <a href={linkedProduct.url} className="button ghost">
             <ArrowRight size={17} /> {linkedProduct.name}
@@ -777,6 +832,124 @@ function GuidedProtocolCard({ protocol, products }) {
       </div>
     </article>
   );
+}
+
+function ProtocolSessionModal({ protocol, onClose, onComplete }) {
+  const totalSeconds = Math.max(60, Number(protocol.durationMinutes || Number.parseInt(protocol.duration, 10) || 8) * 60);
+  const steps = Array.isArray(protocol.steps) && protocol.steps.length ? protocol.steps : [protocol.copy];
+  const [elapsed, setElapsed] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const remaining = Math.max(0, totalSeconds - elapsed);
+  const progress = Math.min(100, Math.round((elapsed / totalSeconds) * 100));
+  const activeStep = Math.min(steps.length - 1, Math.floor((elapsed / totalSeconds) * steps.length));
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isRunning) return undefined;
+    const timer = window.setInterval(() => {
+      setElapsed((current) => Math.min(totalSeconds, current + 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isRunning, totalSeconds]);
+
+  useEffect(() => {
+    if (elapsed >= totalSeconds && isRunning) setIsRunning(false);
+  }, [elapsed, isRunning, totalSeconds]);
+
+  const completeSession = async () => {
+    setIsCompleting(true);
+    try {
+      await onComplete();
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  return (
+    <div className="session-backdrop" role="dialog" aria-modal="true" aria-labelledby="session-title">
+      <section className="session-modal">
+        <button className="session-close" type="button" aria-label="Close session" onClick={onClose}>
+          <X size={18} />
+        </button>
+        <div className="session-visual">
+          <p className="eyebrow">{protocol.pillar}</p>
+          <h2 id="session-title">{protocol.title}</h2>
+          <p>{protocol.copy}</p>
+          <div className="session-timer" style={{ '--progress': `${progress}%` }}>
+            <div>
+              <span>{formatDuration(remaining)}</span>
+              <small>{elapsed >= totalSeconds ? 'Complete' : 'Remaining'}</small>
+            </div>
+          </div>
+          <div className="session-controls">
+            <button className="button primary" type="button" onClick={() => setIsRunning((running) => !running)}>
+              {isRunning ? <Pause size={17} /> : <Play size={17} />} {isRunning ? 'Pause' : 'Start'}
+            </button>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={() => {
+                setElapsed(0);
+                setIsRunning(false);
+              }}
+            >
+              <RotateCcw size={17} /> Reset
+            </button>
+          </div>
+        </div>
+        <div className="session-steps">
+          <div className="session-steps-head">
+            <span>{protocol.duration}</span>
+            <span>{protocol.intensity}</span>
+          </div>
+          <ol>
+            {steps.map((step, index) => (
+              <li
+                key={`${protocol.id}-session-${index}`}
+                className={index === activeStep ? 'is-active' : index < activeStep ? 'is-complete' : ''}
+              >
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <p>{step}</p>
+              </li>
+            ))}
+          </ol>
+          <button className="button primary wide" type="button" disabled={isCompleting} onClick={completeSession}>
+            <Check size={17} /> {isCompleting ? 'Saving session' : 'Complete session'}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function protocolToRitual(protocol) {
+  const duration = Math.max(1, Number(protocol.durationMinutes || Number.parseInt(protocol.duration, 10) || 8));
+  return {
+    protocolId: protocol.id,
+    type: protocol.pillar === 'Breathe' ? 'Breathe' : protocol.pillar === 'Run' ? 'Run' : 'Rest',
+    title: protocol.title,
+    duration,
+    private: true,
+  };
+}
+
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, '0')}`;
 }
 
 function SettingsPage({ state, postState }) {

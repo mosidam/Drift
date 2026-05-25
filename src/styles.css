@@ -1327,6 +1327,182 @@ p {
   width: fit-content;
 }
 
+.session-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 4vw, 32px);
+  background: rgba(5, 5, 5, 0.82);
+  backdrop-filter: blur(22px);
+}
+
+.session-modal {
+  position: relative;
+  width: min(980px, 100%);
+  max-height: min(860px, calc(100svh - 24px));
+  display: grid;
+  grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1fr);
+  overflow: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(216, 116, 53, 0.18), transparent 22rem),
+    linear-gradient(135deg, #11110f, #050505 72%);
+  box-shadow: 0 28px 110px rgba(0, 0, 0, 0.72);
+}
+
+.session-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(5, 5, 5, 0.54);
+}
+
+.session-visual,
+.session-steps {
+  padding: clamp(22px, 5vw, 44px);
+}
+
+.session-visual {
+  display: grid;
+  align-content: space-between;
+  gap: 24px;
+  min-height: 620px;
+  border-right: 1px solid var(--line);
+}
+
+.session-visual h2 {
+  max-width: 430px;
+  margin: 0;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: clamp(3rem, 7vw, 5.8rem);
+  font-weight: 900;
+  line-height: 0.9;
+}
+
+.session-visual p:not(.eyebrow) {
+  max-width: 420px;
+  color: var(--bone);
+  line-height: 1.6;
+}
+
+.session-timer {
+  width: min(300px, 72vw);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #11110f 0 58%, transparent 59%),
+    conic-gradient(var(--green) var(--progress), rgba(244, 239, 226, 0.13) 0);
+}
+
+.session-timer div {
+  width: 74%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(5, 5, 5, 0.64);
+}
+
+.session-timer span {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: clamp(3.2rem, 9vw, 5.2rem);
+  font-weight: 900;
+  line-height: 0.85;
+}
+
+.session-timer small,
+.session-steps-head span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.session-controls,
+.session-steps-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.session-steps {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.session-steps-head {
+  padding-right: 48px;
+}
+
+.session-steps ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-steps li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(244, 239, 226, 0.05);
+}
+
+.session-steps li.is-active {
+  border-color: rgba(184, 213, 208, 0.52);
+  background: rgba(184, 213, 208, 0.1);
+}
+
+.session-steps li.is-complete {
+  border-color: rgba(124, 169, 130, 0.32);
+  background: rgba(124, 169, 130, 0.09);
+}
+
+.session-steps li span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: #050505;
+  background: var(--text);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.session-steps li p {
+  margin: 0;
+  color: var(--bone);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
 .settings-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -1427,6 +1603,20 @@ p {
   .start-flow article:last-child {
     border-bottom: 0;
   }
+
+  .session-modal {
+    grid-template-columns: 1fr;
+  }
+
+  .session-visual {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .session-timer {
+    width: min(260px, 70vw);
+  }
 }
 
 @media (max-width: 720px) {
@@ -1523,6 +1713,33 @@ p {
     display: grid;
     min-height: 72px;
     border-radius: 28px;
+  }
+
+  .session-backdrop {
+    align-items: stretch;
+    padding: 8px;
+  }
+
+  .session-modal {
+    max-height: calc(100svh - 16px);
+  }
+
+  .session-visual,
+  .session-steps {
+    padding: 22px;
+  }
+
+  .session-visual h2 {
+    max-width: 300px;
+  }
+
+  .session-controls .button,
+  .session-steps .button {
+    width: 100%;
+  }
+
+  .session-steps-head {
+    padding-right: 50px;
   }
 
   .bottom-nav a {
