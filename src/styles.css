@@ -346,6 +346,7 @@ p {
 .program-card,
 .safety-notice,
 .success-notice,
+.error-notice,
 .checkin-panel,
 .plan-pill,
 .account-callout,
@@ -864,6 +865,16 @@ p {
   border-color: rgba(124, 169, 130, 0.32);
 }
 
+.error-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  color: var(--text);
+  background: rgba(216, 116, 53, 0.12);
+  border-color: rgba(216, 116, 53, 0.34);
+}
+
 .safety-notice p {
   margin: 0;
   font-size: 0.9rem;
@@ -873,10 +884,45 @@ p {
   color: var(--green);
 }
 
-.success-notice p {
+.error-notice svg {
+  color: var(--orange);
+}
+
+.success-notice p,
+.error-notice p {
   margin: 0;
   color: var(--text);
   font-weight: 800;
+}
+
+.quick-notice {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 14px;
+  color: var(--text);
+  background: rgba(124, 169, 130, 0.12);
+  border: 1px solid rgba(124, 169, 130, 0.3);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.quick-notice svg {
+  flex: 0 0 auto;
+  color: var(--green);
+}
+
+.quick-notice.is-error {
+  background: rgba(216, 116, 53, 0.12);
+  border-color: rgba(216, 116, 53, 0.34);
+}
+
+.quick-notice.is-error svg {
+  color: var(--orange);
 }
 
 .quick-log {

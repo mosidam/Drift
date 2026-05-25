@@ -40,6 +40,7 @@ import {
   combinedTimeline,
   createCheckIn,
   createRitualLog,
+  defaultCheckIn,
   decisionLabels,
   loadCoachState,
   markRitualExported,
@@ -182,10 +183,11 @@ function App() {
       if (import.meta.env.DEV) {
         setState(normalizeState(next));
         setStatus({ api: 'local', coach: 'offline' });
+        return { state: next, decision: buildTodayPlan(next) };
       } else {
         setStatus({ api: 'error', coach: status.coach });
+        throw new Error('DRIFT could not save this yet. Try again.');
       }
-      return { state: next, decision: buildTodayPlan(next) };
     }
   };
 
@@ -390,17 +392,25 @@ function LogPage({ state, plan, postState }) {
   const [savedNotice, setSavedNotice] = useState(null);
 
   const saveCheckIn = async (input) => {
-    await postState(apiRoutes.checkIn, input, (current) => {
-      const withCheckIn = createCheckIn(current, input);
-      const context = buildSanitizedCoachContext(withCheckIn);
-      return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
-    });
-    setSavedNotice('Check-in saved. Your next decision will use it.');
+    try {
+      await postState(apiRoutes.checkIn, input, (current) => {
+        const withCheckIn = createCheckIn(current, input);
+        const context = buildSanitizedCoachContext(withCheckIn);
+        return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
+      });
+      setSavedNotice({ type: 'success', message: 'Check-in saved. Your next decision will use it.' });
+    } catch (error) {
+      setSavedNotice({ type: 'error', message: error.message || 'DRIFT could not save this yet. Try again.' });
+    }
   };
 
   const logRitual = async (ritual) => {
-    await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
-    setSavedNotice(`${ritual.title} logged. Streak updated.`);
+    try {
+      await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
+      setSavedNotice({ type: 'success', message: `${ritual.title} logged. Streak updated.` });
+    } catch (error) {
+      setSavedNotice({ type: 'error', message: error.message || 'DRIFT could not log this yet. Try again.' });
+    }
   };
 
   return (
@@ -411,9 +421,9 @@ function LogPage({ state, plan, postState }) {
         copy="Energy, soreness, stress, and sleep quality tune the daily plan. Private notes stay in your DRIFT account."
       />
       {savedNotice && (
-        <section className="success-notice" role="status">
-          <Check size={20} />
-          <p>{savedNotice}</p>
+        <section className={savedNotice.type === 'error' ? 'error-notice' : 'success-notice'} role="status">
+          {savedNotice.type === 'error' ? <CircleAlert size={20} /> : <Check size={20} />}
+          <p>{savedNotice.message}</p>
         </section>
       )}
       <CheckInForm
@@ -1162,13 +1172,25 @@ function EmptyStravaState() {
 }
 
 function CheckInForm({ initial, onSubmit }) {
+  const safeInitial = initial || defaultCheckIn;
   const [form, setForm] = useState({
-    energy: initial.energy,
-    soreness: initial.soreness,
-    sleep: initial.sleep,
-    stress: initial.stress,
-    note: initial.note,
+    energy: safeInitial.energy ?? defaultCheckIn.energy,
+    soreness: safeInitial.soreness ?? defaultCheckIn.soreness,
+    sleep: safeInitial.sleep ?? defaultCheckIn.sleep,
+    stress: safeInitial.stress ?? defaultCheckIn.stress,
+    note: safeInitial.note ?? defaultCheckIn.note,
   });
+
+  useEffect(() => {
+    const next = initial || defaultCheckIn;
+    setForm({
+      energy: next.energy ?? defaultCheckIn.energy,
+      soreness: next.soreness ?? defaultCheckIn.soreness,
+      sleep: next.sleep ?? defaultCheckIn.sleep,
+      stress: next.stress ?? defaultCheckIn.stress,
+      note: next.note ?? defaultCheckIn.note,
+    });
+  }, [initial?.id]);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -1219,22 +1241,37 @@ function SliderField({ label, value, onChange }) {
 }
 
 function QuickLogBar({ postState }) {
+  const [notice, setNotice] = useState(null);
+
+  const logQuickRitual = async (ritual) => {
+    try {
+      await postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual));
+      setNotice({ type: 'success', message: `${ritual.title} logged.` });
+    } catch (error) {
+      setNotice({ type: 'error', message: error.message || 'DRIFT could not log this yet. Try again.' });
+    }
+  };
+
   return (
-    <section className="quick-log">
-      {quickRituals.slice(0, 3).map((ritual) => {
-        const Icon = ritual.icon;
-        return (
-          <button
-            key={ritual.title}
-            type="button"
-            onClick={() => postState(apiRoutes.ritualLog, ritual, (current) => createRitualLog(current, ritual))}
-          >
-            <Icon size={18} />
-            <span>{ritual.title}</span>
-          </button>
-        );
-      })}
-    </section>
+    <>
+      {notice && (
+        <section className={notice.type === 'error' ? 'quick-notice is-error' : 'quick-notice'} role="status">
+          {notice.type === 'error' ? <CircleAlert size={18} /> : <Check size={18} />}
+          <span>{notice.message}</span>
+        </section>
+      )}
+      <section className="quick-log">
+        {quickRituals.slice(0, 3).map((ritual) => {
+          const Icon = ritual.icon;
+          return (
+            <button key={ritual.title} type="button" onClick={() => logQuickRitual(ritual)}>
+              <Icon size={18} />
+              <span>{ritual.title}</span>
+            </button>
+          );
+        })}
+      </section>
+    </>
   );
 }
 

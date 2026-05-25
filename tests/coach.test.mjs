@@ -51,6 +51,10 @@ const sensitiveState = {
 const context = buildSanitizedCoachContext(sensitiveState, ['no_sauna_today']);
 const serializedContext = JSON.stringify(context);
 
+assert.equal(initialCoachState.activities.length, 0);
+assert.equal(initialCoachState.checkIns.length, 0);
+assert.equal(initialCoachState.ritualLogs.length, 0);
+
 assert.deepEqual(Object.keys(context).sort(), [
   'breath_logs_7d',
   'energy',
@@ -100,7 +104,7 @@ assert.match(serverSource, /\/api\/coach\/adjust/);
 assert.match(serverSource, /\/api\/privacy\/summary/);
 assert.match(serverSource, /\/drift\/strava\/sync/);
 assert.doesNotMatch(serverSource, /connectDemoStrava|demo-strava|mode:\s*'demo'/);
-assert.doesNotMatch(sharedSource, /local-demo|demo-oauth|connectDemoStrava/);
+assert.doesNotMatch(sharedSource, /local-demo|demo-oauth|connectDemoStrava|preview-oauth|seedActivities|Moderate workday|strava-105|ritual-1/);
 
 const odooController = await readFile(new URL('../odoo_addons/drift_coach/controllers/main.py', import.meta.url), 'utf8');
 const odooModels = await readFile(new URL('../odoo_addons/drift_coach/models/drift_models.py', import.meta.url), 'utf8');

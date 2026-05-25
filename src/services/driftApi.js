@@ -1,8 +1,5 @@
 const STORAGE_KEY = 'drift-coach-state-v2';
 const dayMs = 24 * 60 * 60 * 1000;
-const now = new Date();
-
-const isoDaysAgo = (days) => new Date(now.getTime() - days * dayMs).toISOString();
 
 export const apiRoutes = {
   bootstrap: '/drift/api/bootstrap',
@@ -187,72 +184,19 @@ export const commerceProducts = [
   },
 ];
 
-export const seedActivities = [
-  {
-    id: 'strava-105',
-    source: 'Strava',
-    sport: 'Run',
-    name: 'Strava run',
-    startedAt: isoDaysAgo(0),
-    distanceKm: 8.4,
-    movingMinutes: 43,
-    elevationM: 92,
-    effort: 'Moderate',
-    relativeEffort: 62,
-  },
-  {
-    id: 'strava-104',
-    source: 'Strava',
-    sport: 'Run',
-    name: 'Strava run',
-    startedAt: isoDaysAgo(2),
-    distanceKm: 6.1,
-    movingMinutes: 34,
-    elevationM: 38,
-    effort: 'Easy',
-    relativeEffort: 31,
-  },
-  {
-    id: 'strava-103',
-    source: 'Strava',
-    sport: 'TrailRun',
-    name: 'Strava trail run',
-    startedAt: isoDaysAgo(4),
-    distanceKm: 17.8,
-    movingMinutes: 112,
-    elevationM: 420,
-    effort: 'Hard',
-    relativeEffort: 128,
-  },
-  {
-    id: 'strava-102',
-    source: 'Strava',
-    sport: 'Run',
-    name: 'Strava run',
-    startedAt: isoDaysAgo(6),
-    distanceKm: 4.8,
-    movingMinutes: 29,
-    elevationM: 20,
-    effort: 'Easy',
-    relativeEffort: 22,
-  },
-];
-
-const seedCheckIn = {
-  id: 'checkin-seed',
-  createdAt: isoDaysAgo(0),
+export const defaultCheckIn = {
   energy: 6,
   soreness: 4,
   sleep: 'okay',
   stress: 4,
-  note: 'Moderate workday, legs a little heavy.',
+  note: '',
 };
 
 export const initialCoachState = {
   session: {
-    id: 'local-preview-session',
+    id: 'browser-session',
     authReady: true,
-    mode: 'local-preview',
+    mode: 'browser-fallback',
     csrfToken: null,
   },
   profile: {
@@ -273,27 +217,8 @@ export const initialCoachState = {
     mode: 'not-connected',
   },
   activities: [],
-  checkIns: [seedCheckIn],
-  ritualLogs: [
-    {
-      id: 'ritual-1',
-      type: 'Breathe',
-      title: 'Nasal Reset',
-      duration: 6,
-      createdAt: isoDaysAgo(1),
-      private: true,
-      exportedToStrava: false,
-    },
-    {
-      id: 'ritual-2',
-      type: 'Rest',
-      title: 'Sauna Downshift',
-      duration: 22,
-      createdAt: isoDaysAgo(3),
-      private: true,
-      exportedToStrava: false,
-    },
-  ],
+  checkIns: [],
+  ritualLogs: [],
   coachDecisions: [],
   privacyEvents: [],
   entitlements: [],
@@ -323,6 +248,11 @@ export function saveCoachState(state) {
 }
 
 export function normalizeState(state) {
+  const legacyPreviewState = state.session?.mode === ['local', 'preview'].join('-');
+  const activities = legacyPreviewState ? [] : Array.isArray(state.activities) ? state.activities : [];
+  const checkIns = legacyPreviewState ? [] : Array.isArray(state.checkIns) ? state.checkIns : [];
+  const ritualLogs = legacyPreviewState ? [] : Array.isArray(state.ritualLogs) ? state.ritualLogs : [];
+
   return {
     ...initialCoachState,
     ...state,
@@ -330,9 +260,9 @@ export function normalizeState(state) {
     strava: { ...initialCoachState.strava, ...(state.strava || {}) },
     session: { ...initialCoachState.session, ...(state.session || {}) },
     mobile: { ...initialCoachState.mobile, ...(state.mobile || {}) },
-    activities: Array.isArray(state.activities) ? state.activities : [],
-    checkIns: Array.isArray(state.checkIns) && state.checkIns.length ? state.checkIns : [seedCheckIn],
-    ritualLogs: Array.isArray(state.ritualLogs) ? state.ritualLogs : [],
+    activities,
+    checkIns,
+    ritualLogs,
     coachDecisions: Array.isArray(state.coachDecisions) ? state.coachDecisions : [],
     privacyEvents: Array.isArray(state.privacyEvents) ? state.privacyEvents : [],
     entitlements: Array.isArray(state.entitlements) ? state.entitlements : [],
@@ -357,30 +287,6 @@ export function applyBootstrapPayload(currentState, payload) {
     mobile: {
       ...currentState.mobile,
       ...(payload.mobile || {}),
-    },
-  });
-}
-
-export function connectPreviewStrava(state) {
-  return normalizeState({
-    ...state,
-    strava: {
-      ...state.strava,
-      connected: true,
-      athleteName: 'Connected athlete',
-      lastSync: new Date().toISOString(),
-      mode: 'preview-oauth',
-    },
-    activities: seedActivities,
-  });
-}
-
-export function enableWriteScope(state) {
-  return normalizeState({
-    ...state,
-    strava: {
-      ...state.strava,
-      writeScope: true,
     },
   });
 }
@@ -433,7 +339,7 @@ export function buildSanitizedCoachContext(state, userConstraints = []) {
   const recentActivities = normalized.activities.filter((activity) => daysSince(activity.startedAt) <= 7);
   const sortedActivities = [...recentActivities].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
   const latestRun = sortedActivities[0] || null;
-  const latestCheckIn = normalized.checkIns[0] || seedCheckIn;
+  const latestCheckIn = normalized.checkIns[0] || defaultCheckIn;
   const recentRituals = normalized.ritualLogs.filter((log) => daysSince(log.createdAt) <= 7);
 
   return {
