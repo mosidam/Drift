@@ -26014,13 +26014,13 @@ const Es = -3.84, _m = 5.72, xm = "/drift_coach/static/tryon/models/drift-sauna-
   man: {
     url: "/drift_coach/static/tryon/models/drift-model-man.glb",
     label: "Man / sauna shorts",
-    anchor: [0, 0.03, 0.08],
+    anchor: [0, 0.08, 0.08],
     rotation: Math.PI - 0.08
   },
   woman: {
     url: "/drift_coach/static/tryon/models/drift-model-woman.glb",
     label: "Woman / towel wrap",
-    anchor: [0, 0.16, 0.07],
+    anchor: [0, 0.24, 0.07],
     rotation: Math.PI - 0.04
   }
 }, fo = {
@@ -26057,7 +26057,7 @@ function Mm(r) {
   const s = new Dt(31, 1, 0.1, 100);
   s.position.set(0.12, -0.85, 12.4);
   const a = new Ft();
-  a.rotation.y = Hn.man.rotation, a.position.y = -0.24, i.add(a);
+  a.rotation.y = Hn.man.rotation, a.position.y = -0.52, i.add(a);
   const o = Sm(), { bodyGroup: l, hatAnchor: c, hatGroup: u, hatMaterial: d, trimMaterial: h, seamMaterial: f, wardrobe: g, fallbackHatGroup: v } = ym(a, o), m = Pm(i), p = {
     color: "black",
     dragging: !1,
@@ -26072,7 +26072,7 @@ function Mm(r) {
   Em(u, v, o), M.load(p.model);
   const T = () => {
     const _ = e.getBoundingClientRect(), b = Math.max(320, Math.floor(_.width)), P = Math.max(520, Math.floor(_.height));
-    n.setSize(b, P, !1), s.aspect = b / P, s.position.z = b < 720 ? 15.4 : 12.8, s.position.y = -0.85, s.updateProjectionMatrix();
+    n.setSize(b, P, !1), s.aspect = b / P, a.position.y = b < 720 ? -0.4 : -0.52, s.position.z = b < 720 ? 15.4 : 12.8, s.position.y = -0.85, s.updateProjectionMatrix();
   }, y = () => {
     const _ = fo[p.color] || fo.black, b = po[p.variant] || po.classic, P = vm[p.trim] || _.trim, C = Hn[p.model] || Hn.man;
     d.color.set(_.hat), h.color.set(P), f.color.set(P).multiplyScalar(0.72);

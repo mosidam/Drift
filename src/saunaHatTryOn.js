@@ -8,13 +8,13 @@ const MODEL_CONFIG = {
   man: {
     url: '/drift_coach/static/tryon/models/drift-model-man.glb',
     label: 'Man / sauna shorts',
-    anchor: [0, 0.03, 0.08],
+    anchor: [0, 0.08, 0.08],
     rotation: Math.PI - 0.08,
   },
   woman: {
     url: '/drift_coach/static/tryon/models/drift-model-woman.glb',
     label: 'Woman / towel wrap',
-    anchor: [0, 0.16, 0.07],
+    anchor: [0, 0.24, 0.07],
     rotation: Math.PI - 0.04,
   },
 };
@@ -74,7 +74,7 @@ function createTryOn(root) {
 
   const avatar = new THREE.Group();
   avatar.rotation.y = MODEL_CONFIG.man.rotation;
-  avatar.position.y = -0.24;
+  avatar.position.y = -0.52;
   scene.add(avatar);
 
   const materials = createMaterials();
@@ -101,6 +101,7 @@ function createTryOn(root) {
     const height = Math.max(520, Math.floor(bounds.height));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
+    avatar.position.y = width < 720 ? -0.4 : -0.52;
     camera.position.z = width < 720 ? 15.4 : 12.8;
     camera.position.y = -0.85;
     camera.updateProjectionMatrix();
