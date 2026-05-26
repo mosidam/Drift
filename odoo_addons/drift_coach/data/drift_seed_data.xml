@@ -60,6 +60,66 @@
         <field name="duration_seconds">120</field>
     </record>
 
+    <record id="protocol_post_run_stretch" model="drift.protocol">
+        <field name="name">Post-Run Stretch</field>
+        <field name="slug">post-run-stretch</field>
+        <field name="sequence">25</field>
+        <field name="pillar">Rest</field>
+        <field name="duration_minutes">10</field>
+        <field name="intensity">Mobility</field>
+        <field name="summary">A simple guided stretch for calves, hips, hamstrings, and low back after logged volume.</field>
+        <field name="equipment">Mat optional</field>
+        <field name="audio_ready">1</field>
+    </record>
+    <record id="protocol_post_run_stretch_step_1" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_post_run_stretch"/>
+        <field name="sequence">10</field>
+        <field name="name">Start with calves, ankles, and easy foot pressure.</field>
+        <field name="duration_seconds">180</field>
+    </record>
+    <record id="protocol_post_run_stretch_step_2" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_post_run_stretch"/>
+        <field name="sequence">20</field>
+        <field name="name">Move into hip flexors and hamstrings without forcing range.</field>
+        <field name="duration_seconds">300</field>
+    </record>
+    <record id="protocol_post_run_stretch_step_3" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_post_run_stretch"/>
+        <field name="sequence">30</field>
+        <field name="name">Finish with low back breathing and one minute still.</field>
+        <field name="duration_seconds">120</field>
+    </record>
+
+    <record id="protocol_guided_downshift_meditation" model="drift.protocol">
+        <field name="name">Guided Downshift Meditation</field>
+        <field name="slug">guided-downshift-meditation</field>
+        <field name="sequence">28</field>
+        <field name="pillar">Rest</field>
+        <field name="duration_minutes">10</field>
+        <field name="intensity">Still</field>
+        <field name="summary">A quiet guided reset for athletes carrying training load, work stress, or late-day stimulation.</field>
+        <field name="equipment">Headphones optional</field>
+        <field name="audio_ready">1</field>
+    </record>
+    <record id="protocol_guided_downshift_meditation_step_1" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_guided_downshift_meditation"/>
+        <field name="sequence">10</field>
+        <field name="name">Sit or lie down without checking metrics.</field>
+        <field name="duration_seconds">120</field>
+    </record>
+    <record id="protocol_guided_downshift_meditation_step_2" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_guided_downshift_meditation"/>
+        <field name="sequence">20</field>
+        <field name="name">Follow a slow body scan from feet to jaw.</field>
+        <field name="duration_seconds">360</field>
+    </record>
+    <record id="protocol_guided_downshift_meditation_step_3" model="drift.protocol.step">
+        <field name="protocol_id" ref="protocol_guided_downshift_meditation"/>
+        <field name="sequence">30</field>
+        <field name="name">Close with one simple plan for tomorrow.</field>
+        <field name="duration_seconds">120</field>
+    </record>
+
     <record id="protocol_sauna_downshift" model="drift.protocol">
         <field name="name">Sauna Downshift</field>
         <field name="slug">sauna-downshift</field>
@@ -121,12 +181,12 @@
     </record>
 
     <record id="program_7_day_reset" model="drift.program">
-        <field name="name">7-Day Run / Breathe / Rest Reset</field>
+        <field name="name">7-Day Strava Rest Reset</field>
         <field name="slug">seven-day-reset</field>
         <field name="sequence">10</field>
         <field name="pillar">System</field>
         <field name="duration_days">7</field>
-        <field name="summary">A one-week preview program that teaches the DRIFT loop without needing Strava.</field>
+        <field name="summary">A one-week preview that turns activity volume into stretching, meditation, sauna, or quiet rest.</field>
     </record>
     <record id="program_hot_miles" model="drift.program">
         <field name="name">Hot Miles</field>
@@ -134,7 +194,7 @@
         <field name="sequence">20</field>
         <field name="pillar">Run</field>
         <field name="duration_days">14</field>
-        <field name="summary">Heat-aware running rituals for athletes building without forcing the day.</field>
+        <field name="summary">Heat-aware running and rest rituals for athletes building without forcing the day.</field>
     </record>
     <record id="program_sauna_downshift" model="drift.program">
         <field name="name">Sauna Downshift</field>
@@ -142,7 +202,7 @@
         <field name="sequence">30</field>
         <field name="pillar">Rest</field>
         <field name="duration_days">14</field>
-        <field name="summary">A conservative heat and cool-down system for closing training days.</field>
+        <field name="summary">A conservative heat, meditation, and cool-down system for closing training days.</field>
     </record>
     <record id="program_race_week_reset" model="drift.program">
         <field name="name">Race Week Reset</field>
@@ -150,22 +210,22 @@
         <field name="sequence">40</field>
         <field name="pillar">System</field>
         <field name="duration_days">7</field>
-        <field name="summary">A simple race-week rhythm for control, breath, and lower-input evenings.</field>
+        <field name="summary">A simple race-week rhythm for mobility, meditation, and lower-input evenings.</field>
     </record>
 
     <record id="program_7_day_reset_day_1" model="drift.program.day">
         <field name="program_id" ref="program_7_day_reset"/>
         <field name="day_index">1</field>
         <field name="title">Set the baseline</field>
-        <field name="protocol_id" ref="protocol_nasal_reset"/>
-        <field name="action">Check in, complete Nasal Reset, and log how the first decision feels.</field>
+        <field name="protocol_id" ref="protocol_post_run_stretch"/>
+        <field name="action">Check in, complete Post-Run Stretch, and log how the first recommendation feels.</field>
     </record>
     <record id="program_7_day_reset_day_2" model="drift.program.day">
         <field name="program_id" ref="program_7_day_reset"/>
         <field name="day_index">2</field>
         <field name="title">Close the easy day</field>
-        <field name="protocol_id" ref="protocol_quiet_reset"/>
-        <field name="action">Keep intensity low and finish with a quiet evening reset.</field>
+        <field name="protocol_id" ref="protocol_guided_downshift_meditation"/>
+        <field name="action">Keep intensity low and finish with a guided meditation.</field>
     </record>
     <record id="program_7_day_reset_day_3" model="drift.program.day">
         <field name="program_id" ref="program_7_day_reset"/>

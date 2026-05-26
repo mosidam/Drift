@@ -87,6 +87,43 @@ assert.equal(validateCoachDecision(fallbackDecision), true);
 assert.match(fallbackDecision.safety_note, /not medical advice/i);
 assert.equal(Array.isArray(fallbackDecision.recommended_protocol_ids), true);
 assert.equal(Object.prototype.hasOwnProperty.call(fallbackDecision, 'recommended_product_template_id'), true);
+assert.equal(fallbackDecision.recommended_protocol_ids.includes('guided-downshift-meditation'), true);
+
+const moderateVolumeDecision = buildDeterministicDecision(
+  {
+    ...context,
+    weekly_run_km: 22,
+    weekly_effort: 110,
+    last_run_type: 'Run',
+    last_run_hours_ago: 18,
+    energy: 7,
+    soreness: 3,
+    stress: 3,
+    sauna_logs_7d: 0,
+  },
+  'offline',
+);
+assert.equal(moderateVolumeDecision.recommended_protocol_ids.includes('post-run-stretch'), true);
+assert.equal(moderateVolumeDecision.recommended_protocol_ids.includes('guided-downshift-meditation'), true);
+
+const highVolumeDecision = buildDeterministicDecision(
+  {
+    ...context,
+    weekly_run_km: 45,
+    weekly_effort: 220,
+    last_run_type: 'Run',
+    last_run_hours_ago: 8,
+    energy: 7,
+    soreness: 3,
+    stress: 3,
+    sauna_logs_7d: 0,
+  },
+  'offline',
+);
+assert.equal(highVolumeDecision.decision, 'downshift');
+assert.equal(highVolumeDecision.recommended_protocol_ids.includes('sauna-downshift'), true);
+assert.equal(highVolumeDecision.recommended_protocol_ids.includes('guided-downshift-meditation'), true);
+assert.equal(highVolumeDecision.recommended_protocol_ids.includes('post-run-stretch'), true);
 
 const stateWithDecision = recordCoachDecision(sensitiveState, fallbackDecision, context, 'offline');
 const privacy = buildPrivacySummary(stateWithDecision);
@@ -110,6 +147,7 @@ assert.match(serverSource, /\/api\/coach\/adjust/);
 assert.match(serverSource, /\/api\/privacy\/summary/);
 assert.match(serverSource, /\/drift\/strava\/sync/);
 assert.match(serverSource, /content-type,x-csrftoken,x-drift-csrf/);
+assert.match(serverSource, /Strava-first rest recommendation app/);
 assert.doesNotMatch(serverSource, /connectDemoStrava|demo-strava|mode:\s*'demo'/);
 assert.doesNotMatch(sharedSource, /local-demo|demo-oauth|connectDemoStrava|preview-oauth|seedActivities|Moderate workday|strava-105|ritual-1/);
 
@@ -119,6 +157,7 @@ const odooManifest = await readFile(new URL('../odoo_addons/drift_coach/__manife
 const odooAccess = await readFile(new URL('../odoo_addons/drift_coach/security/ir.model.access.csv', import.meta.url), 'utf8');
 const odooRules = await readFile(new URL('../odoo_addons/drift_coach/security/drift_record_rules.xml', import.meta.url), 'utf8');
 const odooTemplates = await readFile(new URL('../odoo_addons/drift_coach/views/drift_templates.xml', import.meta.url), 'utf8');
+const odooSeed = await readFile(new URL('../odoo_addons/drift_coach/data/drift_seed_data.xml', import.meta.url), 'utf8');
 const odooHooks = await readFile(new URL('../odoo_addons/drift_coach/hooks.py', import.meta.url), 'utf8');
 const packageSource = await readFile(new URL('../package.json', import.meta.url), 'utf8');
 const tryOnSource = await readFile(new URL('../src/saunaHatTryOn.js', import.meta.url), 'utf8');
@@ -160,6 +199,9 @@ assert.match(odooModels, /android_play_store_url/);
 assert.match(odooModels, /encrypted_access_token/);
 assert.match(odooModels, /strava_activity_id/);
 assert.match(odooModels, /"protocolId": record\.protocol_id\.slug/);
+assert.match(odooModels, /Strava-first rest recommendation app/);
+assert.match(odooModels, /post-run-stretch/);
+assert.match(odooModels, /guided-downshift-meditation/);
 assert.doesNotMatch(odooModels, /raw_payload/);
 assert.doesNotMatch(odooModels, /route_name/);
 assert.match(odooManifest, /auth_signup/);
@@ -185,6 +227,9 @@ assert.match(odooTemplates, /data-model="woman"/);
 assert.match(odooTemplates, /Join color vote/);
 assert.match(odooTemplates, /\/drift_coach\/static\/tryon\/sauna-hat-try-on\.js/);
 assert.doesNotMatch(odooTemplates, /cures|heals|treats|diagnoses/i);
+assert.match(odooSeed, /post-run-stretch/);
+assert.match(odooSeed, /guided-downshift-meditation/);
+assert.match(odooSeed, /stretching, meditation, sauna, or quiet rest/);
 assert.match(odooHooks, /\/sauna-hat/);
 assert.match(odooTemplates, /No generic newsletter/);
 assert.match(odooTemplates, /You can ask to be removed any time/);
@@ -209,7 +254,12 @@ assert.match(tryOnSource, /data-fit/);
 assert.match(tryOnSource, /__driftTryOnReady/);
 assert.match(tryOnBundle, /data-drift-tryon/);
 assert.match(tryOnConfig, /publicDir:\s*'src\/tryon-public'/);
-assert.match(pwaSource, /Create free account|Your free home for recovery decisions/);
+assert.match(sharedSource, /post-run-stretch/);
+assert.match(sharedSource, /guided-downshift-meditation/);
+assert.match(sharedSource, /Strava volume and recent effort/);
+assert.match(pwaSource, /Create free account|Your free home for rest recommendations/);
+assert.match(pwaSource, /DRIFT syncs activity volume from Strava/);
+assert.match(pwaSource, /sauna, guided meditation, stretching, or quiet recovery/);
 assert.match(pwaSource, /\/app\/signup\?redirect=\/app\/today/);
 assert.match(pwaSource, /programAccessStatus/);
 assert.match(pwaSource, /Unlock with kit/);
@@ -219,6 +269,7 @@ assert.match(pwaSource, /Start guided session/);
 assert.match(pwaSource, /apiRoutes\.ritualLog/);
 assert.match(pwaSource, /protocolId:\s*protocol\.id/);
 assert.match(pwaSource, /private:\s*true/);
+assert.match(pwaSource, /Strava import pending/);
 assert.match(pwaSource, /InstallPage/);
 assert.match(pwaSource, /\/app\/install/);
 assert.match(pwaSource, /Sync Strava/);

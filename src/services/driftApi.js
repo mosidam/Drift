@@ -80,6 +80,34 @@ export const protocols = [
     commerceUrl: '/shop',
   },
   {
+    id: 'post-run-stretch',
+    pillar: 'Rest',
+    title: 'Post-Run Stretch',
+    duration: '10 min',
+    durationMinutes: 10,
+    intensity: 'Mobility',
+    copy: 'A simple guided stretch for calves, hips, hamstrings, and low back after logged volume.',
+    equipment: 'Mat optional',
+    audioReady: true,
+    steps: ['Start with calves and ankles', 'Move into hip flexors and hamstrings', 'Finish with low back breathing'],
+    cta: 'Use after easy and moderate volume',
+    commerceUrl: null,
+  },
+  {
+    id: 'guided-downshift-meditation',
+    pillar: 'Rest',
+    title: 'Guided Downshift Meditation',
+    duration: '10 min',
+    durationMinutes: 10,
+    intensity: 'Still',
+    copy: 'A quiet guided reset for athletes carrying training load, work stress, or late-day stimulation.',
+    equipment: 'Headphones optional',
+    audioReady: true,
+    steps: ['Sit or lie down without checking metrics', 'Follow a slow body scan from feet to jaw', 'Close with one simple plan for tomorrow'],
+    cta: 'Use when volume or stress is high',
+    commerceUrl: null,
+  },
+  {
     id: 'sauna-downshift',
     pillar: 'Rest',
     title: 'Sauna Downshift',
@@ -112,11 +140,11 @@ export const protocols = [
 export const programs = [
   {
     id: 'seven-day-reset',
-    title: '7-Day Run / Breathe / Rest Reset',
+    title: '7-Day Strava Rest Reset',
     pillar: 'System',
     durationDays: 7,
-    copy: 'A one-week preview that teaches the DRIFT loop: run context, check-in, daily decision, ritual log.',
-    protocolIds: ['hot-miles-prep', 'nasal-reset', 'quiet-reset', 'sauna-downshift'],
+    copy: 'A one-week preview that turns activity volume into stretching, meditation, sauna, or quiet rest.',
+    protocolIds: ['post-run-stretch', 'guided-downshift-meditation', 'sauna-downshift', 'quiet-reset'],
     commerceUrl: null,
   },
   {
@@ -124,8 +152,8 @@ export const programs = [
     title: 'Hot Miles',
     pillar: 'Run',
     durationDays: 14,
-    copy: 'Heat-aware running rituals for athletes building without forcing the day.',
-    protocolIds: ['hot-miles-prep', 'nasal-reset'],
+    copy: 'Heat-aware running and rest rituals for athletes building without forcing the day.',
+    protocolIds: ['hot-miles-prep', 'post-run-stretch', 'guided-downshift-meditation'],
     commerceUrl: '/shop',
   },
   {
@@ -133,8 +161,8 @@ export const programs = [
     title: 'Sauna Downshift',
     pillar: 'Rest',
     durationDays: 14,
-    copy: 'A conservative heat and cool-down system for closing training days.',
-    protocolIds: ['sauna-downshift', 'quiet-reset'],
+    copy: 'A conservative heat, meditation, and cool-down system for closing training days.',
+    protocolIds: ['sauna-downshift', 'guided-downshift-meditation', 'quiet-reset'],
     commerceUrl: '/shop/sauna-downshift-kit-7',
   },
   {
@@ -142,8 +170,8 @@ export const programs = [
     title: 'Race Week Reset',
     pillar: 'System',
     durationDays: 7,
-    copy: 'A simple race-week rhythm for control, breath, and lower-input evenings.',
-    protocolIds: ['nasal-reset', 'quiet-reset'],
+    copy: 'A simple race-week rhythm for mobility, meditation, and lower-input evenings.',
+    protocolIds: ['post-run-stretch', 'guided-downshift-meditation', 'quiet-reset'],
     commerceUrl: '/shop',
   },
 ];
@@ -379,93 +407,113 @@ export function buildDeterministicDecision(context, source = 'offline', adjustme
   const loadPressure = context.weekly_effort / 42 + context.weekly_run_km / 9;
   const readiness = clamp(Math.round(92 - fatigue * 2.4 - loadPressure + context.breath_logs_7d * 2), 28, 94);
   const recentHardRun = context.weekly_effort >= 170 || context.weekly_run_km >= 34 || context.last_run_type === 'TrailRun';
+  const hasActivityVolume = Boolean(context.last_run_type && context.last_run_type !== 'none');
+  const highVolume = context.weekly_run_km >= 34 || context.weekly_effort >= 170;
+  const moderateVolume = context.weekly_run_km >= 16 || context.weekly_effort >= 80;
 
   let decision = 'control';
-  let primaryAction = 'Keep the system steady today: controlled movement, one breath protocol, one rest ritual.';
-  let runAdjustment = 'Run easy for 35 to 45 minutes, no pace target.';
-  let breathProtocol = 'Nasal Reset - 6 minutes of nasal breathing after the run or before the first work block.';
-  let restProtocol = 'Sauna Downshift - one controlled heat round, cool rinse, and five minutes seated before screens.';
-  let why = 'The run load is manageable and the check-in can support a steady aerobic day.';
+  let primaryAction = 'Use today as a recovery support day: one guided stretch, then a short downshift before sleep.';
+  let runAdjustment = 'Strava volume is light to moderate this week. Keep the next run easy unless your check-in is clearly strong.';
+  let breathProtocol = 'Guided Downshift Meditation - 10 minutes to lower stimulation after training or work.';
+  let restProtocol = 'Post-Run Stretch - 10 minutes for calves, hips, hamstrings, and low back.';
+  let why = 'Your recent activity volume does not require an aggressive recovery intervention, so DRIFT is recommending mobility plus a short guided reset.';
   let confidence = 'medium';
-  let commerceHint = 'Sauna Downshift Kit';
-  let recommendedProtocolIds = ['nasal-reset', 'sauna-downshift'];
-  let recommendedProductTemplateId = 7;
+  let commerceHint = 'No gear needed';
+  let recommendedProtocolIds = ['post-run-stretch', 'guided-downshift-meditation'];
+  let recommendedProductTemplateId = null;
 
-  if (!context.last_run_type || context.last_run_type === 'none') {
+  if (!hasActivityVolume) {
     decision = 'control';
-    primaryAction = 'Start with a manual check-in and one low-friction breath protocol.';
-    runAdjustment = 'Connect Strava for run context, or log today as a non-running control day.';
-    breathProtocol = 'Nasal Reset - 6 minutes, low intensity.';
-    restProtocol = 'Quiet Reset - 12 minutes, low light, no metrics review.';
-    why = 'DRIFT can work without Strava, but run import makes the decision sharper.';
-    commerceHint = 'DRIFT Nose Strips';
-    recommendedProtocolIds = ['nasal-reset', 'quiet-reset'];
+    primaryAction = 'Start manually today: check in, complete a guided stretch, and add Strava when ready for volume-based recommendations.';
+    runAdjustment = 'No imported activity volume yet. DRIFT can still guide rest from your check-in, but Strava makes the recommendation sharper.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes, low input.';
+    restProtocol = 'Post-Run Stretch - 10 minutes, easy range only.';
+    why = 'Without imported activity volume, DRIFT keeps the recommendation conservative and useful: mobility plus a short guided reset.';
+    commerceHint = 'No gear needed';
+    recommendedProtocolIds = ['post-run-stretch', 'guided-downshift-meditation'];
     recommendedProductTemplateId = null;
   }
 
-  if (readiness >= 74 && context.weekly_run_km < 24 && context.energy >= 7) {
+  if (hasActivityVolume && !moderateVolume && readiness >= 68) {
     decision = 'build';
-    primaryAction = 'Build carefully: add a small amount of run quality without losing the recovery rhythm.';
-    runAdjustment = 'Run 45 minutes easy with 6 x 20-second relaxed strides.';
-    breathProtocol = 'Hot Miles Prep - four minutes nasal-only before the first stride.';
-    restProtocol = 'Quiet Reset - keep the evening simple and screen-light.';
-    why = 'Energy is good and weekly load is still light enough to build without forcing the day.';
+    primaryAction = 'Volume is light. Keep the rest session short so you recover without making the day feel heavy.';
+    runAdjustment = 'Next run can stay normal: easy aerobic work or light strides if energy remains high.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes after work or before sleep.';
+    restProtocol = 'Post-Run Stretch - 10 minutes, focus on hips and calves.';
+    why = 'Strava volume is still low enough that the best recovery choice is a simple stretch and nervous-system downshift.';
     confidence = 'medium';
-    commerceHint = 'DRIFT Heat Cap';
-    recommendedProtocolIds = ['hot-miles-prep', 'quiet-reset'];
-    recommendedProductTemplateId = 2;
+    commerceHint = 'No gear needed';
+    recommendedProtocolIds = ['post-run-stretch', 'guided-downshift-meditation'];
+    recommendedProductTemplateId = null;
   }
 
   if (readiness < 52 || fatigue >= 16) {
     decision = 'rest';
-    primaryAction = 'Protect the day. Reduce input and let the body absorb training.';
-    runAdjustment = 'Skip intensity. Walk, mobility, or 20 minutes very easy if you need movement.';
-    breathProtocol = 'Quiet Reset breathing - inhale 4, exhale 6 for 8 minutes.';
-    restProtocol = 'Quiet Rest - skip heat today unless you already tolerate it well.';
-    why = 'The check-in suggests the system is already carrying enough stress.';
+    primaryAction = 'Protect the day. Use a guided meditation and skip extra training signal.';
+    runAdjustment = 'No intensity today. Walk or take complete rest if soreness, stress, or sleep feel off.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes, no metrics review first.';
+    restProtocol = 'Quiet Reset - 12 minutes, low light and low input. Skip sauna unless it already feels easy for you.';
+    why = 'Your check-in suggests the system is carrying enough stress, so DRIFT is recommending the lowest-friction rest protocol.';
     confidence = 'high';
-    commerceHint = 'DRIFT Nose Strips';
-    recommendedProtocolIds = ['quiet-reset', 'nasal-reset'];
+    commerceHint = 'No gear needed';
+    recommendedProtocolIds = ['guided-downshift-meditation', 'quiet-reset'];
     recommendedProductTemplateId = null;
-  } else if (recentHardRun || (context.last_run_hours_ago !== null && context.last_run_hours_ago <= 30 && context.weekly_effort >= 120)) {
+  } else if (highVolume || recentHardRun || (context.last_run_hours_ago !== null && context.last_run_hours_ago <= 30 && context.weekly_effort >= 120)) {
     decision = 'downshift';
-    primaryAction = 'Absorb the work. Your next gain comes from closing the loop, not adding more signal.';
-    runAdjustment = 'No hard running today. Choose an easy shakeout or complete rest.';
-    breathProtocol = 'Nasal Reset - 6 minutes after work or before the heat round.';
-    restProtocol = context.sauna_logs_7d ? 'Short warm-room reset - keep it conservative.' : restProtocol;
-    why = 'A recent hard or long load needs a cleaner landing before the next build.';
+    primaryAction = 'Activity volume is high. Close the training day with sauna if available, otherwise use meditation plus stretching.';
+    runAdjustment = 'No hard running today. Choose a very easy shakeout or complete rest.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes before the rest session or before sleep.';
+    restProtocol = context.sauna_logs_7d
+      ? 'Post-Run Stretch - 10 minutes, then Quiet Reset. You already logged sauna recently.'
+      : 'Sauna Downshift - one controlled heat round, cool rinse, and a quiet landing.';
+    why = 'Strava volume and recent effort indicate that the next useful session is recovery, not more output.';
     confidence = 'high';
     commerceHint = 'Sauna Downshift Kit';
-    recommendedProtocolIds = ['nasal-reset', 'sauna-downshift'];
+    recommendedProtocolIds = context.sauna_logs_7d
+      ? ['post-run-stretch', 'guided-downshift-meditation', 'quiet-reset']
+      : ['sauna-downshift', 'guided-downshift-meditation', 'post-run-stretch'];
     recommendedProductTemplateId = 7;
+  } else if (moderateVolume) {
+    decision = 'control';
+    primaryAction = 'Volume is meaningful but manageable. Use stretching now and guided meditation later.';
+    runAdjustment = 'Keep the next session easy unless today’s check-in improves clearly.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes in the evening.';
+    restProtocol = 'Post-Run Stretch - 10 minutes after the run or as the first recovery block.';
+    why = 'Your Strava week has enough volume to benefit from structured rest, but not enough to require a full downshift day.';
+    confidence = 'medium';
+    commerceHint = 'No gear needed';
+    recommendedProtocolIds = ['post-run-stretch', 'guided-downshift-meditation'];
+    recommendedProductTemplateId = null;
   }
 
   if (adjustment === 'make_it_easier' || adjustment === 'feel_worse') {
     decision = 'rest';
-    primaryAction = 'Make today smaller. The win is lowering load without dropping the ritual.';
+    primaryAction = 'Make today smaller. The win is completing one easy rest session.';
     runAdjustment = 'No intensity. Walk or take complete rest.';
-    breathProtocol = 'Quiet Reset breathing - 8 minutes, nasal only.';
-    restProtocol = 'Quiet Rest - no sauna required.';
-    why = 'You asked for a lower-input plan, so DRIFT is removing intensity and heat pressure.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes, low input.';
+    restProtocol = 'Quiet Reset - no sauna required.';
+    why = 'You asked for a lower-input plan, so DRIFT is removing intensity, heat pressure, and extra decisions.';
     confidence = 'high';
-    commerceHint = 'DRIFT Nose Strips';
-    recommendedProtocolIds = ['quiet-reset'];
+    commerceHint = 'No gear needed';
+    recommendedProtocolIds = ['guided-downshift-meditation', 'quiet-reset'];
     recommendedProductTemplateId = null;
   }
 
   if (adjustment === 'no_sauna_today') {
-    restProtocol = 'Quiet Rest - 12 minutes, low light, no heat exposure.';
-    why = `${why} Sauna is optional today; the rest target can be met without heat.`;
-    recommendedProtocolIds = [...recommendedProtocolIds.filter((id) => id !== 'sauna-downshift'), 'quiet-reset'];
+    restProtocol = 'Post-Run Stretch - 10 minutes, then Quiet Reset. No heat exposure needed.';
+    why = `${why} Sauna is optional; the recovery target can be met with stretching and guided rest.`;
+    recommendedProtocolIds = [...recommendedProtocolIds.filter((id) => id !== 'sauna-downshift'), 'post-run-stretch', 'quiet-reset'];
   }
 
   if (adjustment === 'ran_harder') {
     decision = decision === 'build' ? 'control' : 'downshift';
-    primaryAction = 'Treat the session as higher load and close the day cleanly.';
+    primaryAction = 'Treat the activity as higher load and close the day with a rest protocol.';
     runAdjustment = 'No additional intensity today.';
-    restProtocol = 'Sauna Downshift only if it feels controlled; otherwise use Quiet Rest.';
-    why = 'The plan was adjusted because the run was harder than expected.';
+    breathProtocol = 'Guided Downshift Meditation - 10 minutes before sleep.';
+    restProtocol = 'Sauna Downshift if available and familiar; otherwise Post-Run Stretch plus Quiet Reset.';
+    why = 'The recommendation changed because the activity was harder than planned.';
     confidence = 'high';
+    recommendedProtocolIds = ['guided-downshift-meditation', 'post-run-stretch', 'sauna-downshift'];
   }
 
   return enrichDecision(

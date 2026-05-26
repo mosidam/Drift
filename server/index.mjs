@@ -216,7 +216,7 @@ async function generateOpenAIDecision(context) {
         {
           role: 'system',
           content:
-            'You are DRIFT Recovery OS. Return only a conservative JSON recovery decision for a runner. Do not give medical advice, diagnosis, or injury treatment. Use only the provided aggregate context.',
+            'You are DRIFT, a Strava-first rest recommendation app. Return only a conservative JSON decision for an athlete. Use activity volume and effort to recommend sauna, guided meditation, stretching, or quiet rest protocols. Do not give medical advice, diagnosis, or injury treatment. Use only the provided aggregate context.',
         },
         {
           role: 'user',

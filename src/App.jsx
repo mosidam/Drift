@@ -84,12 +84,12 @@ const accountBenefits = [
   {
     icon: Activity,
     title: 'Strava context',
-    copy: 'Use weekly load and last-run timing for sharper decisions.',
+    copy: 'Use weekly volume, effort, and last-session timing for sharper rest recommendations.',
   },
   {
     icon: CalendarDays,
     title: 'Programs',
-    copy: 'Carry your 7-Day Reset, Hot Miles, and Sauna Downshift paths.',
+    copy: 'Carry your 7-Day Reset, stretching, meditation, and Sauna Downshift paths.',
   },
   {
     icon: Lock,
@@ -100,11 +100,18 @@ const accountBenefits = [
 
 const quickRituals = [
   {
-    type: 'Breathe',
-    title: 'Nasal Reset',
-    duration: 6,
-    icon: Wind,
-    copy: 'Slow nasal control for work blocks, evening resets, or post-run downshift.',
+    type: 'Rest',
+    title: 'Post-Run Stretch',
+    duration: 10,
+    icon: Waves,
+    copy: 'A guided mobility reset for calves, hips, hamstrings, and low back after logged volume.',
+  },
+  {
+    type: 'Rest',
+    title: 'Guided Downshift Meditation',
+    duration: 10,
+    icon: Moon,
+    copy: 'A quiet body scan for athletes carrying training load, work stress, or late-day stimulation.',
   },
   {
     type: 'Rest',
@@ -112,6 +119,13 @@ const quickRituals = [
     duration: 22,
     icon: Flame,
     copy: 'One controlled heat round, cool rinse, and a quiet landing.',
+  },
+  {
+    type: 'Breathe',
+    title: 'Nasal Reset',
+    duration: 6,
+    icon: Wind,
+    copy: 'Slow nasal control for work blocks, evening resets, or post-run downshift.',
   },
   {
     type: 'Rest',
@@ -290,6 +304,7 @@ function BottomNav() {
 function TodayPage({ state, plan, status, postState, products }) {
   const context = buildSanitizedCoachContext(state);
   const hasStrava = state.strava.connected && state.activities.length > 0;
+  const stravaConfigured = Boolean(state.strava.oauthConfigured);
   const hasAccount = Boolean(state.profile?.portalAccount);
   const decisionLabel = decisionLabels[plan.decision];
 
@@ -309,12 +324,12 @@ function TodayPage({ state, plan, status, postState, products }) {
         <img src={assets.runner} alt="" />
         <div className="hero-scrim" />
         <div className="hero-copy">
-          <p className="eyebrow">Recovery OS for Strava athletes</p>
-          <h1>{decisionLabel}: close the day like an athlete.</h1>
-          <p>Strava shows the workout. DRIFT turns your run, body state, and recovery habits into one clear Run / Breathe / Rest plan.</p>
+          <p className="eyebrow">Rest recommendations from Strava</p>
+          <h1>{decisionLabel}: recover from the work you logged.</h1>
+          <p>DRIFT syncs activity volume from Strava and recommends the right rest session: sauna, guided meditation, stretching, or quiet recovery.</p>
           <div className="hero-actions">
             <button className="button primary" type="button" onClick={generateDecision}>
-              <Brain size={17} /> Get today’s decision
+              <Brain size={17} /> Get rest recommendation
             </button>
             <Link to={appPath('/log')} className="button ghost">
               <Plus size={17} /> Check in
@@ -323,30 +338,30 @@ function TodayPage({ state, plan, status, postState, products }) {
         </div>
       </section>
 
-      <StartFlow hasAccount={hasAccount} hasStrava={hasStrava} />
+      <StartFlow hasAccount={hasAccount} hasStrava={hasStrava} stravaConfigured={stravaConfigured} />
 
       <HowItWorks connected={hasStrava} />
 
       {!hasAccount && <AccountPrompt />}
 
-      {!hasStrava && <EmptyStravaState />}
+      {!hasStrava && <EmptyStravaState stravaConfigured={stravaConfigured} />}
 
       <section className="decision-band">
-        <MetricCard icon={Gauge} label="Decision" value={decisionLabel} detail={`${plan.readiness} readiness`} />
-        <MetricCard icon={TrendingUp} label="7-day load" value={`${context.weekly_run_km} km`} detail={`${context.weekly_effort} effort`} />
-        <MetricCard icon={Wind} label="Breath" value={context.breath_logs_7d} detail="logs this week" />
+        <MetricCard icon={Gauge} label="Recommendation" value={decisionLabel} detail={`${plan.readiness} readiness`} />
+        <MetricCard icon={TrendingUp} label="7-day volume" value={`${context.weekly_run_km} km`} detail={`${context.weekly_effort} effort`} />
+        <MetricCard icon={Wind} label="Guided" value={context.breath_logs_7d} detail="breath logs" />
         <MetricCard icon={Flame} label="Heat" value={context.sauna_logs_7d} detail="sauna logs" />
       </section>
 
       <section className="section-block">
         <div className="section-title">
-          <p className="eyebrow">{status.coach === 'openai' ? 'Personalized daily plan' : 'Daily plan'}</p>
-          <h2>Today’s Run / Breathe / Rest plan.</h2>
+          <p className="eyebrow">{status.coach === 'openai' ? 'Personalized rest pick' : 'Daily recommendation'}</p>
+          <h2>Today’s rest recommendation.</h2>
         </div>
         <div className="decision-grid">
-          <DecisionCard icon={RouteIcon} label="Run Context" title={decisionLabel} copy={plan.run_adjustment} />
-          <DecisionCard icon={Wind} label="Breath Protocol" title="Breathe" copy={plan.breath_protocol} />
-          <DecisionCard icon={Waves} label="Sauna / Rest Protocol" title="Rest" copy={plan.rest_protocol} />
+          <DecisionCard icon={RouteIcon} label="Activity Volume" title={decisionLabel} copy={plan.run_adjustment} />
+          <DecisionCard icon={Wind} label="Guided Session" title="Meditate" copy={plan.breath_protocol} />
+          <DecisionCard icon={Waves} label="Rest Protocol" title="Recover" copy={plan.rest_protocol} />
           <DecisionCard icon={Brain} label="Why this plan" title="Why" copy={plan.why} />
         </div>
       </section>
@@ -355,8 +370,8 @@ function TodayPage({ state, plan, status, postState, products }) {
         <div className="panel">
           <div className="panel-heading">
             <div>
-              <p className="eyebrow">Run Context</p>
-              <h3>{hasStrava ? 'Strava is shaping today' : 'Manual check-in is enough to start'}</h3>
+              <p className="eyebrow">Activity Volume</p>
+              <h3>{hasStrava ? 'Strava volume is shaping today' : 'Manual mode is enough to start'}</h3>
             </div>
             <RefreshCw size={18} />
           </div>
@@ -366,8 +381,8 @@ function TodayPage({ state, plan, status, postState, products }) {
             <span>{context.last_run_type}</span>
           </div>
           <p>
-            DRIFT reads the shape of your training day: weekly load, last-run timing, and your check-in. Route names and
-            maps are not needed.
+            DRIFT reads weekly volume, effort, last-activity timing, and your check-in. Route names and maps are not
+            needed for rest recommendations.
           </p>
         </div>
         <div className="panel product-panel">
@@ -402,7 +417,7 @@ function LogPage({ state, plan, postState }) {
         const context = buildSanitizedCoachContext(withCheckIn);
         return recordCoachDecision(withCheckIn, buildDeterministicDecision(context, 'offline'), context, 'offline');
       });
-      setSavedNotice({ type: 'success', message: 'Check-in saved. Your next decision will use it.' });
+      setSavedNotice({ type: 'success', message: 'Check-in saved. Your next recommendation will use it.' });
     } catch (error) {
       setSavedNotice({ type: 'error', message: error.message || 'DRIFT could not save this yet. Try again.' });
     }
@@ -422,7 +437,7 @@ function LogPage({ state, plan, postState }) {
       <PageIntro
         eyebrow="Check body state"
         title="Tell DRIFT what Strava cannot see."
-        copy="Energy, soreness, stress, and sleep quality tune the daily plan. Private notes stay in your DRIFT account."
+        copy="Energy, soreness, stress, and sleep quality tune the rest recommendation. Private notes stay in your DRIFT account."
       />
       {savedNotice && (
         <section className={savedNotice.type === 'error' ? 'error-notice' : 'success-notice'} role="status">
@@ -454,7 +469,7 @@ function LogPage({ state, plan, postState }) {
       <section className="panel coach-summary">
         <Brain size={22} />
         <div>
-          <p className="eyebrow">Current decision</p>
+          <p className="eyebrow">Current recommendation</p>
           <h3>{decisionLabels[plan.decision]}</h3>
           <p>{plan.primary_action}</p>
         </div>
@@ -486,12 +501,12 @@ function CoachPage({ state, plan, privacy, postState }) {
     <div className="screen coach-screen">
       <PageIntro
         eyebrow="Coach"
-        title="Tune today’s plan in one tap."
-        copy="Tell DRIFT what changed and get a cleaner recovery decision without opening an open-ended chat."
+        title="Tune today’s rest recommendation in one tap."
+        copy="Tell DRIFT what changed and it will adjust the suggested sauna, meditation, stretching, or quiet rest session."
       />
       <section className="coach-decision-panel">
         <div>
-          <p className="eyebrow">Today’s decision</p>
+            <p className="eyebrow">Today’s recommendation</p>
           <h2>{decisionLabels[plan.decision]}</h2>
           <p>{plan.primary_action}</p>
         </div>
@@ -510,19 +525,19 @@ function CoachPage({ state, plan, privacy, postState }) {
         ))}
       </section>
       <section className="decision-grid compact">
-        <DecisionCard icon={RouteIcon} label="Run" title="Run Adjustment" copy={plan.run_adjustment} />
-        <DecisionCard icon={Wind} label="Breathe" title="Breath Protocol" copy={plan.breath_protocol} />
-        <DecisionCard icon={Waves} label="Rest" title="Rest Protocol" copy={plan.rest_protocol} />
+        <DecisionCard icon={RouteIcon} label="Activity" title="Volume Context" copy={plan.run_adjustment} />
+        <DecisionCard icon={Wind} label="Guided" title="Meditation" copy={plan.breath_protocol} />
+        <DecisionCard icon={Waves} label="Rest" title="Protocol" copy={plan.rest_protocol} />
         <DecisionCard icon={Brain} label="Why" title="Reasoning" copy={lastAdjustment?.decision?.why || plan.why} />
       </section>
       <section className="privacy-panel">
         <div>
           <p className="eyebrow">Private by default</p>
           <h3>Your plan uses signals, not secrets.</h3>
-          <p>Training load, check-in scores, and ritual history shape the plan. Personal notes, route titles, and maps stay out.</p>
+          <p>Activity volume, check-in scores, and ritual history shape the recommendation. Personal notes, route titles, and maps stay out.</p>
         </div>
         <div className="privacy-list">
-          <span>Run load</span>
+          <span>Activity volume</span>
           <span>Body check-in</span>
           <span>Ritual streaks</span>
         </div>
@@ -539,13 +554,13 @@ function HistoryPage({ state, timeline, postState }) {
       <PageIntro
         eyebrow="History"
         title="One timeline for effort and downshift."
-        copy="Runs come from Strava. Sauna and breathwork are DRIFT logs, private unless you choose to export them."
+        copy="Activities come from Strava. Sauna, meditation, stretching, and breathwork are DRIFT logs, private unless you choose to export them."
       />
       <section className="panel">
         <div className="panel-heading">
           <div>
-            <p className="eyebrow">Weekly Load</p>
-            <h3>{state.activities.length ? 'Run volume context' : 'No Strava runs yet'}</h3>
+            <p className="eyebrow">Activity Volume</p>
+            <h3>{state.activities.length ? 'Strava volume context' : 'No Strava activities yet'}</h3>
           </div>
           <span>{state.activities.reduce((sum, run) => sum + run.distanceKm, 0).toFixed(1)} km</span>
         </div>
@@ -610,8 +625,8 @@ function LibraryPage({ protocols: protocolCatalog, products, postState }) {
     <div className="screen">
       <PageIntro
         eyebrow="Library"
-        title="Guided recovery sessions, built around the training day."
-        copy="Browse short Run / Breathe / Rest sessions with clear timing, simple equipment, and optional product support."
+        title="Guided rest sessions for the work Strava sees."
+        copy="Browse sauna, guided meditation, stretching, breath, and quiet rest sessions with clear timing and simple steps."
       />
       <section className="filter-tabs" aria-label="Library filters">
         {['All', 'Run', 'Breathe', 'Rest'].map((item) => (
@@ -648,8 +663,8 @@ function ProgramsPage({ state, programs: programCatalog, protocols: protocolCata
     <div className="screen">
       <PageIntro
         eyebrow="Programs"
-        title="Guided paths for Run / Breathe / Rest."
-        copy="Programs turn single rituals into repeatable weekly systems. Start free, then unlock deeper paths through linked DRIFT kits."
+        title="Guided paths for rest after training."
+        copy="Programs turn single rest sessions into repeatable weekly systems: stretching, meditation, sauna, and lower-input days."
       />
       <section className="program-grid">
         {programCatalog.map((program) => {
@@ -740,8 +755,8 @@ function ProtocolsPage({ protocols: protocolCatalog = protocols, postState }) {
     <div className="screen">
       <PageIntro
         eyebrow="Protocols"
-        title="Rituals for the hours around training."
-        copy="Run gives the signal. Breathe and Rest close the loop. DRIFT protocols are practical, not medical."
+        title="Rest protocols matched to activity volume."
+        copy="After Strava logs the work, DRIFT helps choose the recovery input: stretch, meditate, sauna, breathe, or keep the day quiet."
       />
       {notice && (
         <section className={notice.type === 'error' ? 'error-notice' : 'success-notice'} role="status">
@@ -957,12 +972,13 @@ function SettingsPage({ state, postState }) {
   const params = new URLSearchParams(window.location.search);
   const stravaStatus = params.get('strava');
   const [notice, setNotice] = useState(null);
+  const stravaConfigured = Boolean(state.strava.oauthConfigured);
   const stravaMessage = {
-    missing_config: 'Strava linking is not available yet. You can still check in, save rituals, and build your DRIFT history.',
+    missing_config: 'Strava import is not enabled for this DRIFT instance yet. Manual check-ins and rest recommendations still work today.',
     missing_code: 'Strava did not finish connecting. Try again from this screen.',
     state_error: 'That Strava attempt expired. Start the connection again from here.',
     denied: 'Strava connection was cancelled. Manual check-ins still work.',
-    read_scope_required: 'DRIFT needs permission to read activity summaries so it can understand run load.',
+    read_scope_required: 'DRIFT needs permission to read activity summaries so it can understand volume and effort.',
     connected_sync_failed: 'Strava connected, but the first sync did not finish. Tap Sync Strava to try again.',
   }[stravaStatus];
 
@@ -972,6 +988,10 @@ function SettingsPage({ state, postState }) {
       setNotice('Strava synced. Your next plan will use the latest run context.');
       return;
     }
+    if (!stravaConfigured) {
+      setNotice('Manual mode is ready. Strava import will appear here once Strava access is enabled for DRIFT.');
+      return;
+    }
     if (oauthUrl) window.location.href = `${API_BASE}${oauthUrl}`;
   };
 
@@ -979,8 +999,8 @@ function SettingsPage({ state, postState }) {
     <div className="screen">
       <PageIntro
         eyebrow="Account"
-        title="Your free home for recovery decisions."
-        copy="Create an account to save your training context, connect Strava, keep streaks, and unlock programs from DRIFT kits."
+        title="Your free home for rest recommendations."
+        copy="Create an account to save training context, connect Strava when enabled, keep streaks, and unlock programs from DRIFT kits."
       />
       {stravaMessage && (
         <section className="safety-notice">
@@ -1000,18 +1020,35 @@ function SettingsPage({ state, postState }) {
           <div className="panel-heading">
             <div>
               <p className="eyebrow">Strava</p>
-              <h3>{state.strava.connected ? 'Connected for run context' : 'Add your run load'}</h3>
+              <h3>
+                {state.strava.connected
+                  ? 'Connected for activity volume'
+                  : stravaConfigured
+                    ? 'Add your activity volume'
+                    : 'Manual mode now. Strava next.'}
+              </h3>
             </div>
             <Activity size={22} />
           </div>
           <p>
-            Connect Strava so DRIFT can understand weekly load, recent effort, and when you last ran. Ritual export is
-            always optional.
+            Connect Strava so DRIFT can understand weekly volume, recent effort, and when you last trained. Ritual export
+            is always optional.
           </p>
           <div className="button-row">
-            <button className="button primary" type="button" onClick={connect}>
-              <RefreshCw size={17} /> {state.strava.connected ? 'Sync Strava' : 'Connect Strava'}
-            </button>
+            {state.strava.connected || stravaConfigured ? (
+              <button className="button primary" type="button" onClick={connect}>
+                <RefreshCw size={17} /> {state.strava.connected ? 'Sync Strava' : 'Connect Strava'}
+              </button>
+            ) : (
+              <>
+                <Link className="button primary" to={appPath('/log')}>
+                  <Plus size={17} /> Check in manually
+                </Link>
+                <button className="button ghost" type="button" onClick={connect}>
+                  <Activity size={17} /> Strava import pending
+                </button>
+              </>
+            )}
           </div>
         </article>
         <article className="panel">
@@ -1060,7 +1097,7 @@ function InstallPage({ state }) {
         <div className="hero-copy">
           <p className="eyebrow">Install DRIFT</p>
           <h1>Install DRIFT on your phone.</h1>
-          <p>Open DRIFT after training: check in, get the day’s Run / Breathe / Rest decision, and log the ritual before the day drifts away.</p>
+          <p>Open DRIFT after training: check in, get the day’s rest recommendation, and log the protocol before the day drifts away.</p>
           <div className="hero-actions">
             <Link to={appPath('/today')} className="button primary">
               <ArrowRight size={17} /> Open DRIFT
@@ -1116,9 +1153,9 @@ function InstallPage({ state }) {
 
       <section className="how-grid" aria-label="Install benefits">
         {[
-          ['Daily decision', 'Build, Control, Downshift, or Rest in under 30 seconds.'],
+          ['Daily rest pick', 'Sauna, meditation, stretching, or quiet rest in under 30 seconds.'],
           ['Saved rhythm', 'Check-ins, rituals, streaks, and programs stay with your account.'],
-          ['Strava context', 'Run load sharpens the plan when you connect it.'],
+          ['Strava context', 'Activity volume sharpens the recommendation when you connect it.'],
           ['Shop unlocks', 'DRIFT kits can unlock related guided programs.'],
         ].map(([title, copy], index) => (
           <article key={title}>
@@ -1138,18 +1175,18 @@ function PrivacyPage({ privacy }) {
       <PageIntro
         eyebrow="Privacy"
         title="Your routes and notes stay yours."
-        copy="DRIFT can personalize a recovery plan from summary signals without reading maps, route titles, or personal notes."
+        copy="DRIFT can recommend rest protocols from summary signals without reading maps, route titles, or personal notes."
       />
       <section className="privacy-panel">
         <div>
           <p className="eyebrow">Used for your plan</p>
           <h3>The signals that matter after training.</h3>
-          <p>Training load, last-run timing, check-in scores, ritual streaks, and selected adjustment buttons shape the daily decision.</p>
+          <p>Activity volume, last-session timing, check-in scores, ritual streaks, and selected adjustment buttons shape the daily recommendation.</p>
         </div>
         <div className="privacy-list">
-          <span>Weekly run load</span>
+          <span>Weekly activity volume</span>
           <span>Energy / soreness / stress / sleep</span>
-          <span>Breath and sauna logs</span>
+          <span>Stretching, meditation, and sauna logs</span>
           <span>Selected adjustment buttons</span>
         </div>
       </section>
@@ -1193,10 +1230,10 @@ function StravaCallback() {
 
 function HowItWorks({ connected }) {
   const steps = [
-    ['Import run load', connected ? 'Strava is connected.' : 'Connect Strava or use a manual check-in.'],
+    ['Import activity volume', connected ? 'Strava is connected.' : 'Connect Strava or use a manual check-in.'],
     ['Check body state', 'Energy, soreness, stress, sleep.'],
-    ['Get decision', 'Build, Control, Downshift, or Rest.'],
-    ['Log ritual', 'Breathe, sauna, or quiet reset.'],
+    ['Get rest session', 'Sauna, meditation, stretching, or quiet rest.'],
+    ['Log the protocol', 'Build a history of what helps you recover.'],
   ];
 
   return (
@@ -1212,7 +1249,7 @@ function HowItWorks({ connected }) {
   );
 }
 
-function StartFlow({ hasAccount, hasStrava }) {
+function StartFlow({ hasAccount, hasStrava, stravaConfigured }) {
   const steps = [
     {
       icon: UserPlus,
@@ -1222,9 +1259,13 @@ function StartFlow({ hasAccount, hasStrava }) {
     },
     {
       icon: Activity,
-      title: hasStrava ? 'Strava connected' : 'Connect Strava',
-      copy: hasStrava ? 'Run load is already shaping today’s plan.' : 'Add run load and last-run timing when you are ready.',
-      action: hasStrava ? null : { label: 'Connect', to: appPath('/profile') },
+      title: hasStrava ? 'Strava connected' : stravaConfigured ? 'Connect Strava' : 'Start manually',
+      copy: hasStrava
+        ? 'Activity volume is already shaping today’s rest recommendation.'
+        : stravaConfigured
+          ? 'Add volume, effort, and last-activity timing when you are ready.'
+          : 'Manual check-ins work today. Strava import appears here as soon as it is enabled.',
+      action: hasStrava ? null : { label: stravaConfigured ? 'Connect' : 'Check in', to: stravaConfigured ? appPath('/profile') : appPath('/log') },
     },
     {
       icon: Plus,
@@ -1293,7 +1334,7 @@ function AccountCard({ hasAccount }) {
       <p>
         {hasAccount
           ? 'Your check-ins, rituals, Strava connection, and program access are tied to this account.'
-          : 'Start free, save your recovery rhythm, and keep every Run / Breathe / Rest decision in one place.'}
+          : 'Start free, save your recovery rhythm, and keep every rest recommendation in one place.'}
       </p>
       <AccountBenefitList />
       {!hasAccount && (
@@ -1327,18 +1368,19 @@ function AccountBenefitList({ compact = false }) {
   );
 }
 
-function EmptyStravaState() {
+function EmptyStravaState({ stravaConfigured }) {
   return (
     <section className="empty-state">
       <div>
         <p className="eyebrow">Start without Strava</p>
-        <h2>Use DRIFT today. Add Strava when ready.</h2>
+        <h2>{stravaConfigured ? 'Use DRIFT today. Add Strava when ready.' : 'Use DRIFT today. Strava import is the next layer.'}</h2>
         <p>
-          A manual check-in is enough to get a plan. Strava adds weekly load and last-run timing when you connect it.
+          A manual check-in is enough to get a rest recommendation. Strava adds activity volume, effort, and last-session timing when connected.
         </p>
       </div>
-      <Link to={appPath('/profile')} className="button primary">
-        <Activity size={17} /> Connect Strava
+      <Link to={stravaConfigured ? appPath('/profile') : appPath('/log')} className="button primary">
+        {stravaConfigured ? <Activity size={17} /> : <Plus size={17} />}
+        {stravaConfigured ? 'Connect Strava' : 'Check in manually'}
       </Link>
     </section>
   );

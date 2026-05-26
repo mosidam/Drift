@@ -659,7 +659,8 @@ class DriftCoachDecision(models.Model):
                 {
                     "role": "system",
                     "content": (
-                        "You are DRIFT Recovery OS. Return only conservative JSON for a runner. "
+                        "You are DRIFT, a Strava-first rest recommendation app. Return only conservative JSON for an athlete. "
+                        "Use activity volume and effort to recommend sauna, guided meditation, stretching, or quiet rest protocols. "
                         "Do not give medical advice, diagnosis, injury treatment, or unsafe heat guidance. "
                         "Use only the provided aggregate context."
                     ),
@@ -776,46 +777,49 @@ class DriftCoachDecision(models.Model):
         load_pressure = context["weekly_effort"] / 42 + context["weekly_run_km"] / 9
         readiness = max(28, min(94, round(92 - fatigue * 2.4 - load_pressure + context["breath_logs_7d"] * 2)))
         recent_hard = context["weekly_effort"] >= 170 or context["weekly_run_km"] >= 34 or context["last_run_type"] == "TrailRun"
+        has_activity_volume = bool(context["last_run_type"] and context["last_run_type"] != "none")
+        high_volume = context["weekly_run_km"] >= 34 or context["weekly_effort"] >= 170
+        moderate_volume = context["weekly_run_km"] >= 16 or context["weekly_effort"] >= 80
 
         decision = {
             "decision": "control",
-            "primary_action": "Keep the system steady today: controlled movement, one breath protocol, one rest ritual.",
-            "run_adjustment": "Run easy for 35 to 45 minutes, no pace target.",
-            "breath_protocol": "Nasal Reset - 6 minutes of nasal breathing after the run or before the first work block.",
-            "rest_protocol": "Sauna Downshift - one controlled heat round, cool rinse, and five minutes seated before screens.",
-            "why": "The run load is manageable and the check-in can support a steady aerobic day.",
+            "primary_action": "Use today as a recovery support day: one guided stretch, then a short downshift before sleep.",
+            "run_adjustment": "Strava volume is light to moderate this week. Keep the next run easy unless your check-in is clearly strong.",
+            "breath_protocol": "Guided Downshift Meditation - 10 minutes to lower stimulation after training or work.",
+            "rest_protocol": "Post-Run Stretch - 10 minutes for calves, hips, hamstrings, and low back.",
+            "why": "Your recent activity volume does not require an aggressive recovery intervention, so DRIFT is recommending mobility plus a short guided reset.",
             "confidence": "medium",
             "safety_note": "Informational performance guidance only. Not medical advice, diagnosis, injury treatment, or a replacement for a qualified coach.",
-            "commerce_hint": "Sauna Downshift Kit",
-            "recommended_protocol_ids": ["nasal-reset", "sauna-downshift"],
+            "commerce_hint": "No gear needed",
+            "recommended_protocol_ids": ["post-run-stretch", "guided-downshift-meditation"],
             "recommended_product_template_id": None,
         }
 
-        if context["last_run_type"] == "none":
+        if not has_activity_volume:
             decision.update(
                 {
                     "decision": "control",
-                    "primary_action": "Start with a manual check-in and one low-friction breath protocol.",
-                    "run_adjustment": "Connect Strava for run context, or log today as a non-running control day.",
-                    "breath_protocol": "Nasal Reset - 6 minutes, low intensity.",
-                    "rest_protocol": "Quiet Reset - 12 minutes, low light, no metrics review.",
-                    "why": "DRIFT can work without Strava, but run import makes the decision sharper.",
-                    "commerce_hint": "DRIFT Nose Strips",
-                    "recommended_protocol_ids": ["nasal-reset", "quiet-reset"],
+                    "primary_action": "Start manually today: check in, complete a guided stretch, and add Strava when ready for volume-based recommendations.",
+                    "run_adjustment": "No imported activity volume yet. DRIFT can still guide rest from your check-in, but Strava makes the recommendation sharper.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes, low input.",
+                    "rest_protocol": "Post-Run Stretch - 10 minutes, easy range only.",
+                    "why": "Without imported activity volume, DRIFT keeps the recommendation conservative and useful: mobility plus a short guided reset.",
+                    "commerce_hint": "No gear needed",
+                    "recommended_protocol_ids": ["post-run-stretch", "guided-downshift-meditation"],
                 }
             )
 
-        if readiness >= 74 and context["weekly_run_km"] < 24 and context["energy"] >= 7:
+        if has_activity_volume and not moderate_volume and readiness >= 68:
             decision.update(
                 {
                     "decision": "build",
-                    "primary_action": "Build carefully: add a small amount of run quality without losing the recovery rhythm.",
-                    "run_adjustment": "Run 45 minutes easy with 6 x 20-second relaxed strides.",
-                    "breath_protocol": "Hot Miles Prep - four minutes nasal-only before the first stride.",
-                    "rest_protocol": "Quiet Reset - keep the evening simple and screen-light.",
-                    "why": "Energy is good and weekly load is still light enough to build without forcing the day.",
-                    "commerce_hint": "DRIFT Heat Cap",
-                    "recommended_protocol_ids": ["hot-miles-prep", "quiet-reset"],
+                    "primary_action": "Volume is light. Keep the rest session short so you recover without making the day feel heavy.",
+                    "run_adjustment": "Next run can stay normal: easy aerobic work or light strides if energy remains high.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes after work or before sleep.",
+                    "rest_protocol": "Post-Run Stretch - 10 minutes, focus on hips and calves.",
+                    "why": "Strava volume is still low enough that the best recovery choice is a simple stretch and nervous-system downshift.",
+                    "commerce_hint": "No gear needed",
+                    "recommended_protocol_ids": ["post-run-stretch", "guided-downshift-meditation"],
                 }
             )
 
@@ -823,27 +827,50 @@ class DriftCoachDecision(models.Model):
             decision.update(
                 {
                     "decision": "rest",
-                    "primary_action": "Protect the day. Reduce input and let the body absorb training.",
+                    "primary_action": "Protect the day. Use a guided meditation and skip extra training signal.",
                     "run_adjustment": "Skip intensity. Walk, mobility, or 20 minutes very easy if you need movement.",
-                    "breath_protocol": "Quiet Reset breathing - inhale 4, exhale 6 for 8 minutes.",
-                    "rest_protocol": "Quiet Rest - skip heat today unless you already tolerate it well.",
-                    "why": "The check-in suggests the system is already carrying enough stress.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes, no metrics review first.",
+                    "rest_protocol": "Quiet Reset - 12 minutes, low light and low input. Skip sauna unless it already feels easy for you.",
+                    "why": "Your check-in suggests the system is carrying enough stress, so DRIFT is recommending the lowest-friction rest protocol.",
                     "confidence": "high",
-                    "commerce_hint": "DRIFT Nose Strips",
-                    "recommended_protocol_ids": ["quiet-reset", "nasal-reset"],
+                    "commerce_hint": "No gear needed",
+                    "recommended_protocol_ids": ["guided-downshift-meditation", "quiet-reset"],
                 }
             )
-        elif recent_hard or (context["last_run_hours_ago"] is not None and context["last_run_hours_ago"] <= 30 and context["weekly_effort"] >= 120):
+        elif high_volume or recent_hard or (context["last_run_hours_ago"] is not None and context["last_run_hours_ago"] <= 30 and context["weekly_effort"] >= 120):
             decision.update(
                 {
                     "decision": "downshift",
-                    "primary_action": "Absorb the work. Your next gain comes from closing the loop, not adding more signal.",
+                    "primary_action": "Activity volume is high. Close the training day with sauna if available, otherwise use meditation plus stretching.",
                     "run_adjustment": "No hard running today. Choose an easy shakeout or complete rest.",
-                    "breath_protocol": "Nasal Reset - 6 minutes after work or before the heat round.",
-                    "why": "A recent hard or long load needs a cleaner landing before the next build.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes before the rest session or before sleep.",
+                    "rest_protocol": (
+                        "Post-Run Stretch - 10 minutes, then Quiet Reset. You already logged sauna recently."
+                        if context["sauna_logs_7d"]
+                        else "Sauna Downshift - one controlled heat round, cool rinse, and a quiet landing."
+                    ),
+                    "why": "Strava volume and recent effort indicate that the next useful session is recovery, not more output.",
                     "confidence": "high",
                     "commerce_hint": "Sauna Downshift Kit",
-                    "recommended_protocol_ids": ["nasal-reset", "sauna-downshift"],
+                    "recommended_protocol_ids": (
+                        ["post-run-stretch", "guided-downshift-meditation", "quiet-reset"]
+                        if context["sauna_logs_7d"]
+                        else ["sauna-downshift", "guided-downshift-meditation", "post-run-stretch"]
+                    ),
+                }
+            )
+        elif moderate_volume:
+            decision.update(
+                {
+                    "decision": "control",
+                    "primary_action": "Volume is meaningful but manageable. Use stretching now and guided meditation later.",
+                    "run_adjustment": "Keep the next session easy unless today’s check-in improves clearly.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes in the evening.",
+                    "rest_protocol": "Post-Run Stretch - 10 minutes after the run or as the first recovery block.",
+                    "why": "Your Strava week has enough volume to benefit from structured rest, but not enough to require a full downshift day.",
+                    "confidence": "medium",
+                    "commerce_hint": "No gear needed",
+                    "recommended_protocol_ids": ["post-run-stretch", "guided-downshift-meditation"],
                 }
             )
 
@@ -851,29 +878,31 @@ class DriftCoachDecision(models.Model):
             decision.update(
                 {
                     "decision": "rest",
-                    "primary_action": "Make today smaller. The win is lowering load without dropping the ritual.",
+                    "primary_action": "Make today smaller. The win is completing one easy rest session.",
                     "run_adjustment": "No intensity. Walk or take complete rest.",
-                    "breath_protocol": "Quiet Reset breathing - 8 minutes, nasal only.",
-                    "rest_protocol": "Quiet Rest - no sauna required.",
-                    "why": "You asked for a lower-input plan, so DRIFT is removing intensity and heat pressure.",
+                    "breath_protocol": "Guided Downshift Meditation - 10 minutes, low input.",
+                    "rest_protocol": "Quiet Reset - no sauna required.",
+                    "why": "You asked for a lower-input plan, so DRIFT is removing intensity, heat pressure, and extra decisions.",
                     "confidence": "high",
-                    "commerce_hint": "DRIFT Nose Strips",
-                    "recommended_protocol_ids": ["quiet-reset"],
+                    "commerce_hint": "No gear needed",
+                    "recommended_protocol_ids": ["guided-downshift-meditation", "quiet-reset"],
                 }
             )
 
         if adjustment == "no_sauna_today":
-            decision["rest_protocol"] = "Quiet Rest - 12 minutes, low light, no heat exposure."
-            decision["why"] = f"{decision['why']} Sauna is optional today; the rest target can be met without heat."
-            decision["recommended_protocol_ids"] = [pid for pid in decision["recommended_protocol_ids"] if pid != "sauna-downshift"] + ["quiet-reset"]
+            decision["rest_protocol"] = "Post-Run Stretch - 10 minutes, then Quiet Reset. No heat exposure needed."
+            decision["why"] = f"{decision['why']} Sauna is optional; the recovery target can be met with stretching and guided rest."
+            decision["recommended_protocol_ids"] = [pid for pid in decision["recommended_protocol_ids"] if pid != "sauna-downshift"] + ["post-run-stretch", "quiet-reset"]
 
         if adjustment == "ran_harder":
             decision["decision"] = "control" if decision["decision"] == "build" else "downshift"
-            decision["primary_action"] = "Treat the session as higher load and close the day cleanly."
+            decision["primary_action"] = "Treat the activity as higher load and close the day with a rest protocol."
             decision["run_adjustment"] = "No additional intensity today."
-            decision["rest_protocol"] = "Sauna Downshift only if it feels controlled; otherwise use Quiet Rest."
-            decision["why"] = "The plan was adjusted because the run was harder than expected."
+            decision["breath_protocol"] = "Guided Downshift Meditation - 10 minutes before sleep."
+            decision["rest_protocol"] = "Sauna Downshift if available and familiar; otherwise Post-Run Stretch plus Quiet Reset."
+            decision["why"] = "The recommendation changed because the activity was harder than planned."
             decision["confidence"] = "high"
+            decision["recommended_protocol_ids"] = ["guided-downshift-meditation", "post-run-stretch", "sauna-downshift"]
 
         return self._enrich_decision(decision, context, source, readiness)
 
