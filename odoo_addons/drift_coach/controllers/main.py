@@ -469,7 +469,7 @@ class DriftCoachController(http.Controller):
                 "type": "Workout",
                 "start_date_local": started_at.isoformat(),
                 "elapsed_time": max(60, int(ritual.duration_minutes or 1) * 60),
-                "description": "DRIFT Run / Breathe / Rest ritual exported by the athlete.",
+                "description": "DRIFT rest protocol exported by the athlete.",
                 "trainer": 1,
                 "commute": 0,
             }

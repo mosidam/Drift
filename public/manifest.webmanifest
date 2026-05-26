@@ -1,7 +1,7 @@
 {
-  "name": "DRIFT Coach",
+  "name": "DRIFT Rest Coach",
   "short_name": "DRIFT",
-  "description": "A recovery operating system for Strava athletes.",
+  "description": "Strava activity volume turned into sauna, meditation, stretching, and rest recommendations.",
   "start_url": "/app/today",
   "scope": "/app/",
   "display": "standalone",
@@ -24,7 +24,7 @@
       "url": "/app/today"
     },
     {
-      "name": "Log Ritual",
+      "name": "Log Rest",
       "short_name": "Log",
       "url": "/app/log"
     },

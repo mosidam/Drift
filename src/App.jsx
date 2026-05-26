@@ -270,7 +270,7 @@ function AppHeader({ state, status }) {
     <header className="app-header">
       <Link to={appPath('/today')} className="brand-lockup" aria-label="DRIFT Coach home">
         <span>DRIFT</span>
-        <small>Recovery OS</small>
+        <small>Rest Coach</small>
       </Link>
       <nav className="desktop-nav" aria-label="Primary navigation">
         {navItems.map(([labelText, href, Icon]) => (
@@ -974,7 +974,7 @@ function SettingsPage({ state, postState }) {
   const [notice, setNotice] = useState(null);
   const stravaConfigured = Boolean(state.strava.oauthConfigured);
   const stravaMessage = {
-    missing_config: 'Strava import is not enabled for this DRIFT instance yet. Manual check-ins and rest recommendations still work today.',
+    missing_config: 'Manual recommendations are ready. Strava sync will appear here once it is available for this DRIFT launch.',
     missing_code: 'Strava did not finish connecting. Try again from this screen.',
     state_error: 'That Strava attempt expired. Start the connection again from here.',
     denied: 'Strava connection was cancelled. Manual check-ins still work.',
@@ -989,7 +989,7 @@ function SettingsPage({ state, postState }) {
       return;
     }
     if (!stravaConfigured) {
-      setNotice('Manual mode is ready. Strava import will appear here once Strava access is enabled for DRIFT.');
+      setNotice('Manual recommendations are ready. Strava sync will appear here once it is available for this DRIFT launch.');
       return;
     }
     if (oauthUrl) window.location.href = `${API_BASE}${oauthUrl}`;
@@ -1025,7 +1025,7 @@ function SettingsPage({ state, postState }) {
                   ? 'Connected for activity volume'
                   : stravaConfigured
                     ? 'Add your activity volume'
-                    : 'Manual mode now. Strava next.'}
+                    : 'Manual recommendations are ready.'}
               </h3>
             </div>
             <Activity size={22} />
@@ -1040,14 +1040,9 @@ function SettingsPage({ state, postState }) {
                 <RefreshCw size={17} /> {state.strava.connected ? 'Sync Strava' : 'Connect Strava'}
               </button>
             ) : (
-              <>
-                <Link className="button primary" to={appPath('/log')}>
-                  <Plus size={17} /> Check in manually
-                </Link>
-                <button className="button ghost" type="button" onClick={connect}>
-                  <Activity size={17} /> Strava import pending
-                </button>
-              </>
+              <Link className="button primary" to={appPath('/log')}>
+                <Plus size={17} /> Check in manually
+              </Link>
             )}
           </div>
         </article>

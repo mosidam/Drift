@@ -375,7 +375,7 @@ class DriftFieldLead(models.Model):
             ("sauna_downshift", "Sauna Downshift"),
             ("rest_rituals", "Rest Rituals"),
             ("app", "DRIFT App"),
-            ("system", "Run / Breathe / Rest System"),
+            ("system", "Rest Recommendation System"),
         ],
         default="sauna_hat",
         required=True,

@@ -1,6 +1,6 @@
 {
-    "name": "DRIFT Recovery OS",
-    "summary": "Odoo-native PWA backend for DRIFT Run / Breathe / Rest coaching.",
+    "name": "DRIFT Rest Coach",
+    "summary": "Odoo-native PWA backend for Strava-based rest recommendations.",
     "version": "1.0.0",
     "category": "Website",
     "author": "DRIFT",

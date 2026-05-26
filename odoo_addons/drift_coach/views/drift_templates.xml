@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="app_shell_fallback" name="DRIFT Recovery OS App">
+    <template id="app_shell_fallback" name="DRIFT Rest Coach App">
         <t t-call="website.layout">
             <div id="wrap" class="oe_structure">
                 <section class="container py-5">
-                    <h1>DRIFT Recovery OS</h1>
+                    <h1>DRIFT Rest Coach</h1>
                     <p>The DRIFT app shell is installed. Build the PWA with <code>npm run build:odoo</code> to publish the React interface at <code>/app/today</code>.</p>
                     <a class="btn btn-primary" href="/shop">Open shop</a>
                 </section>
@@ -155,13 +155,13 @@
             </style>
             <main class="drift-auth">
                 <section class="drift-auth__intro">
-                    <p class="drift-auth__eyebrow">DRIFT Recovery OS</p>
+                    <p class="drift-auth__eyebrow">DRIFT Rest Coach</p>
                     <h1><t t-out="headline"/></h1>
                     <p><t t-out="intro"/></p>
                     <ul class="drift-auth__benefits">
                         <li>Saved check-ins</li>
-                        <li>Strava context</li>
-                        <li>Ritual streaks</li>
+                        <li>Strava volume</li>
+                        <li>Rest streaks</li>
                         <li>Unlocked programs</li>
                     </ul>
                 </section>
@@ -174,8 +174,8 @@
 
     <template id="app_login" name="DRIFT App Login">
         <t t-call="drift_coach.app_auth_layout">
-            <t t-set="headline" t-value="'Log in to your recovery system.'"/>
-            <t t-set="intro" t-value="'Save the work you do after training: check-ins, rituals, Strava context, and DRIFT program access.'"/>
+            <t t-set="headline" t-value="'Log in to your rest coach.'"/>
+            <t t-set="intro" t-value="'Save your check-ins, rest sessions, Strava activity context, and DRIFT program access.'"/>
             <h2>Welcome back</h2>
             <p class="drift-auth__small">Use the email and password connected to your DRIFT account.</p>
             <form method="post" action="/web/login">
@@ -193,16 +193,16 @@
                 <button class="drift-auth__submit" type="submit">Log in</button>
             </form>
             <a class="drift-auth__link" t-att-href="signup_url">Create free account</a>
-            <p class="drift-auth__small">No medical promises. Just a cleaner way to close the training day.</p>
+            <p class="drift-auth__small">No medical promises. Just a clearer way to choose rest after training.</p>
         </t>
     </template>
 
     <template id="app_signup" name="DRIFT App Signup">
         <t t-call="drift_coach.app_auth_layout">
             <t t-set="headline" t-value="'Create your free DRIFT account.'"/>
-            <t t-set="intro" t-value="'Start free, save your Run / Breathe / Rest rhythm, and connect Strava when you are ready.'"/>
+            <t t-set="intro" t-value="'Start free, save your rest history, and connect Strava when you are ready for volume-based recommendations.'"/>
             <h2>Start free</h2>
-            <p class="drift-auth__small">Your account keeps recovery history, streaks, and program access available across devices.</p>
+            <p class="drift-auth__small">Your account keeps rest history, streaks, and program access available across devices.</p>
             <form method="post" action="/web/signup">
                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                 <input type="hidden" name="redirect" t-att-value="redirect_url"/>
@@ -954,7 +954,7 @@
                                 <option value="sauna_downshift">Sauna Downshift ritual</option>
                                 <option value="rest_rituals">Rest Rituals</option>
                                 <option value="app">DRIFT app</option>
-                                <option value="system">Run / Breathe / Rest system</option>
+                                <option value="system">Rest recommendation system</option>
                             </select>
                         </label>
                         <button type="submit">Join Field List</button>

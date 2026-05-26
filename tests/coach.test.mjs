@@ -269,7 +269,7 @@ assert.match(pwaSource, /Start guided session/);
 assert.match(pwaSource, /apiRoutes\.ritualLog/);
 assert.match(pwaSource, /protocolId:\s*protocol\.id/);
 assert.match(pwaSource, /private:\s*true/);
-assert.match(pwaSource, /Strava import pending/);
+assert.match(pwaSource, /Manual recommendations are ready/);
 assert.match(pwaSource, /InstallPage/);
 assert.match(pwaSource, /\/app\/install/);
 assert.match(pwaSource, /Sync Strava/);
